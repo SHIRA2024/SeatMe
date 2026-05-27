@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventFlow – אישור הגעה</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.section-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 16px; font-weight: 700; color: var(--dark); margin-bottom: 12px;
+}
+.toggle-row { display: flex; gap: 12px; margin-bottom: 20px; }
+.toggle-btn {
+  flex: 1; border: 1.5px solid var(--gray4); border-radius: 14px;
+  padding: 16px 12px; display: flex; flex-direction: column; align-items: center;
+  gap: 8px; cursor: pointer; background: var(--white);
+  transition: all 0.2s;
+}
+.toggle-btn.active { background: var(--orange); border-color: var(--orange); }
+.toggle-btn.active span { color: white; }
+.toggle-btn span { font-size: 15px; font-weight: 600; color: var(--dark); }
+.toggle-btn .emoji { font-size: 28px; }
+.toggle-btn.active .check {
+  width: 24px; height: 24px; border-radius: 50%; border: 2px solid white;
+  display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;
+}
+
+.counter-box {
+  border: 1.5px solid var(--gray4); border-radius: 12px; padding: 14px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.counter-val { font-size: 28px; font-weight: 700; color: var(--dark); text-align: left; }
+.counter-btns { display: flex; gap: 10px; align-items: center; }
+.counter-btn {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--gray4);
+  background: white; font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--orange); font-weight: 600;
+}
+
+.qr-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1.5px solid var(--gray4); border-radius: 50px; padding: 14px;
+  background: white; cursor: pointer; color: var(--orange); font-size: 15px; font-weight: 600;
+  width: 100%;
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <div style="display:flex;gap:3px;align-items:flex-end">
+      <div style="width:3px;height:5px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:8px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:11px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:14px;background:#1C1C1C;border-radius:1px"></div>
+    </div>
+    <div>9:41</div>
+    <div style="display:flex;gap:5px;align-items:center;font-size:16px">&#x1F4F6; &#x1F50B;</div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-back">›</div>
+    <div class="title">אישור הגעה</div>
+    <div style="width:30px"></div>
+  </div>
+
+  <div class="content" style="padding:20px 16px 24px">
+    <!-- Greeting -->
+    <div style="text-align:center;margin-bottom:24px">
+      <h2 style="font-size:26px;font-weight:800;color:var(--dark)">,היי יובל</h2>
+      <p style="font-size:14px;color:var(--gray2);margin-top:4px">!נשמח לראות אותך חוגג איתנו</p>
+    </div>
+
+    <!-- Attending Toggle -->
+    <div class="section-label">?האם תגיע/י לאירוע</div>
+    <div class="toggle-row">
+      <div class="toggle-btn">
+        <div class="emoji">😔</div>
+        <span>לא אוכל להגיע</span>
+      </div>
+      <div class="toggle-btn active">
+        <div class="check">✓</div>
+        <span>מגיע/ה</span>
+      </div>
+    </div>
+
+    <!-- Guest Count -->
+    <div class="section-label">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1C1C1C" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      ?כמה אורחים תהיו
+    </div>
+    <div class="counter-box" style="margin-bottom:20px">
+      <div class="counter-val">2</div>
+      <div>
+        <div style="font-size:12px;color:var(--gray2);text-align:right;margin-bottom:4px">מספר אורחים</div>
+        <div class="counter-btns">
+          <div class="counter-btn">+</div>
+          <div class="counter-btn">−</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Guest Names -->
+    <div class="section-label" style="margin-bottom:8px">שמות האורחים הנוספים (אופציונלי)</div>
+    <textarea class="input-field" rows="3" placeholder="...לדוגמה: יעל כהן, דני לוי" style="resize:none;border-radius:12px;padding:14px"></textarea>
+    <p style="font-size:12px;color:var(--gray2);margin-top:6px;text-align:right">נוכל להכין לכם פתקי השבה אישיים</p>
+
+    <!-- Song Request -->
+    <div class="section-label" style="margin-top:20px;margin-bottom:8px">
+      <span style="color:var(--orange)">♪</span>
+      ?יש שיר שיקפיץ אותך לרחבה
+    </div>
+    <div style="position:relative">
+      <input class="input-field" type="text" placeholder="שם השיר והאמן">
+      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gray3);font-size:16px">♫</span>
+    </div>
+
+    <!-- Submit -->
+    <div style="margin-top:24px">
+      <button class="btn-orange" style="margin-bottom:12px">שלח אישור הגעה</button>
+      <button class="qr-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="17" y="17" width="4" height="4"/>
+        </svg>
+        לכניסה QR הצג קוד
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      הזמנה
+    </div>
+    <div class="tab-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="1.8">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <polyline points="9 16 11 18 15 14"/>
+      </svg>
+      אישור
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      השבה
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      QR קוד
+    </div>
+  </div>
+</div>
+</body>
+</html>

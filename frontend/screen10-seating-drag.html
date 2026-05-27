@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventFlow – סידור ישיבה</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.tip-card {
+  margin: 12px 16px; border-radius: 14px; padding: 14px 16px; background: white;
+  border: 1.5px solid var(--gray4); display: flex; align-items: flex-start; gap: 12px;
+}
+.tip-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--orange-light); border: 1.5px solid var(--orange-mid); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tip-content h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.tip-content p { font-size: 13px; color: var(--gray2); line-height: 1.4; }
+
+.seating-canvas {
+  flex: 1; background: #F0EDE8; margin: 0 16px; border-radius: 16px;
+  position: relative; min-height: 400px; overflow: hidden;
+}
+
+.floating-table {
+  position: absolute; width: 100px; height: 100px; border-radius: 50%;
+  background: white; border: 2px solid var(--gray4);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.floating-table.highlighted { border: 3px solid var(--orange); background: #FFF8F2; }
+.floating-table .t-label { font-size: 10px; color: var(--gray2); }
+.floating-table .t-num { font-size: 22px; font-weight: 900; color: var(--dark); line-height: 1; }
+.floating-table .t-cap { font-size: 11px; color: var(--gray2); margin-top: 3px; background: var(--gray5); padding: 1px 8px; border-radius: 10px; }
+.floating-table.highlighted .t-cap { background: var(--orange-light); color: var(--orange); }
+
+/* Drag tooltip */
+.drag-tooltip {
+  position: absolute; background: white; border: 1px solid var(--gray4);
+  border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  display: flex; align-items: center; gap: 8px; min-width: 140px;
+  left: 40px; top: 158px;
+}
+.drag-avatar { width: 32px; height: 32px; border-radius: 50%; background: #D0E8FF; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.drag-info { flex: 1; text-align: right; }
+.drag-name { font-size: 13px; font-weight: 700; }
+.drag-sub { font-size: 11px; color: var(--gray2); }
+.drag-handle { color: var(--gray3); }
+
+/* Side panel avatars -->
+.side-panel {
+  position: absolute; right: 10px; top: 60px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.side-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray4); display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; }
+.side-avatar.filled { background: #D0E8FF; }
+
+/* Add button on table -->
+.add-badge {
+  position: absolute; top: -6px; right: -6px;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--orange);
+  color: white; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 4px rgba(232,145,58,0.5);
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <div style="display:flex;gap:3px;align-items:flex-end">
+      <div style="width:3px;height:5px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:8px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:11px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:14px;background:#1C1C1C;border-radius:1px"></div>
+    </div>
+    <div>9:41</div>
+    <div style="display:flex;gap:5px;align-items:center;font-size:16px">&#x1F4F6; &#x1F50B;</div>
+  </div>
+
+  <div class="nav-bar">
+    <div style="width:30px"></div>
+    <div class="title">?איך לסדר</div>
+    <div class="nav-back">›</div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;direction:rtl;display:flex;flex-direction:column">
+    <!-- Tip Card -->
+    <div class="tip-card">
+      <div style="flex:1;text-align:right">
+        <h4>טיף למארח</h4>
+        <p>גרור אורחים מהרשימה בצד אל השולחנות כדי לשייך אותם בקלות.</p>
+      </div>
+      <div class="tip-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Seating Canvas -->
+    <div class="seating-canvas" style="margin-bottom:12px">
+      <!-- Table 1 -->
+      <div class="floating-table" style="left:20px;top:60px">
+        <div class="t-label">שולחן</div>
+        <div class="t-num">1</div>
+        <div class="t-cap">8/10</div>
+      </div>
+
+      <!-- Table 2 -->
+      <div class="floating-table" style="right:20px;top:30px">
+        <div class="t-label">שולחן</div>
+        <div class="t-num">2</div>
+        <div class="t-cap">10/10</div>
+      </div>
+
+      <!-- Table 3 - Highlighted -->
+      <div class="floating-table highlighted" style="left:50%;transform:translateX(-50%);top:180px;position:absolute">
+        <div class="add-badge">▸</div>
+        <div class="t-label">שולחן</div>
+        <div class="t-num" style="color:var(--orange)">3</div>
+        <div class="t-cap">4/12</div>
+      </div>
+
+      <!-- Table 4 -->
+      <div class="floating-table" style="left:20px;bottom:40px">
+        <div class="t-label">שולחן</div>
+        <div class="t-num">4</div>
+        <div class="t-cap">0/8</div>
+      </div>
+
+      <!-- Table 5 -->
+      <div class="floating-table" style="right:20px;bottom:40px">
+        <div class="t-label">שולחן</div>
+        <div class="t-num">5</div>
+        <div class="t-cap">6/10</div>
+      </div>
+
+      <!-- Drag tooltip near table 1 -->
+      <div class="drag-tooltip">
+        <div class="drag-handle">⋮⋮</div>
+        <div class="drag-info">
+          <div class="drag-name">דוד כהן</div>
+          <div class="drag-sub">...בגרירה</div>
+        </div>
+        <div class="drag-avatar">👨</div>
+      </div>
+
+      <!-- Side Panel -->
+      <div class="side-panel">
+        <div style="width:32px;height:32px;border-radius:8px;background:white;border:1px solid var(--gray4);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="side-avatar filled">👤</div>
+        <div class="side-avatar">👤</div>
+        <div class="side-avatar">👤</div>
+        <div class="side-avatar">👤</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      יצוא
+    </div>
+    <div class="tab-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+      סידור ישיבה
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+      </svg>
+      אורחים
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      דאשבורד
+    </div>
+  </div>
+</div>
+</body>
+</html>

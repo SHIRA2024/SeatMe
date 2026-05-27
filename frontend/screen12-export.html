@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventFlow – יצוא ושיתוף</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.preview-card {
+  margin: 12px 16px; border-radius: 16px; padding: 16px; background: var(--orange-light);
+  border: 1.5px solid var(--orange-mid);
+}
+.preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.preview-header h3 { font-size: 15px; font-weight: 700; }
+.preview-eye { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--orange); }
+.preview-meta { font-size: 12px; color: var(--gray2); margin-bottom: 10px; text-align: left; }
+.preview-img {
+  border-radius: 10px; overflow: hidden; background: #555; height: 130px;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.preview-badge {
+  position: absolute; bottom: 10px; right: 10px; background: white;
+  border-radius: 8px; padding: 5px 10px; font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.download-section { padding: 0 16px 16px; }
+.download-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.download-item {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border: 1.5px solid var(--gray4); border-radius: 14px; margin-bottom: 10px;
+  cursor: pointer; background: white;
+}
+.download-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.download-icon.orange { background: var(--orange-light); }
+.download-icon.blue { background: #EAF4FF; }
+.download-info { flex: 1; text-align: right; }
+.download-info h4 { font-size: 15px; font-weight: 700; }
+.download-info p { font-size: 13px; color: var(--gray2); margin-top: 2px; }
+.download-type { font-size: 12px; font-weight: 700; color: var(--orange); }
+.chevron { color: var(--gray3); font-size: 20px; }
+
+.share-section { padding: 0 16px; }
+.share-title { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.share-card { background: #EAF4FF; border: 1.5px solid #BFE7FF; border-radius: 14px; padding: 16px; }
+.share-card h4 { font-size: 14px; font-weight: 700; color: #1565C0; margin-bottom: 4px; }
+.share-card p { font-size: 13px; color: #1976D2; }
+.share-row { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+
+.email-section { padding: 16px; }
+.email-row { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--gray2); cursor: pointer; }
+.email-row svg { color: var(--orange); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <div style="display:flex;gap:3px;align-items:flex-end">
+      <div style="width:3px;height:5px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:8px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:11px;background:#1C1C1C;border-radius:1px"></div>
+      <div style="width:3px;height:14px;background:#1C1C1C;border-radius:1px"></div>
+    </div>
+    <div>9:41</div>
+    <div style="display:flex;gap:5px;align-items:center;font-size:16px">&#x1F4F6; &#x1F50B;</div>
+  </div>
+
+  <div class="nav-bar">
+    <div style="width:30px"></div>
+    <div class="title">יצוא ושיתוף</div>
+    <div class="nav-back">›</div>
+  </div>
+
+  <div class="content">
+    <!-- Main Title -->
+    <div style="padding:16px 16px 8px">
+      <h2 style="font-size:22px;font-weight:800">בחרו פורמט לייצוא</h2>
+      <p style="font-size:14px;color:var(--gray2);margin-top:4px">.הורידו את נתוני האירוע או שתפו אותם עם צוות ההפקה</p>
+    </div>
+
+    <!-- Preview Card -->
+    <div class="preview-card">
+      <div class="preview-header">
+        <div class="preview-eye">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          תצוגה מקדימה
+        </div>
+        <h3>תצוגה מקדימה של התרשים</h3>
+      </div>
+      <p class="preview-meta">עודכן לאחרונה: לפני 5 דקות</p>
+      <div class="preview-img">
+        <!-- Seating chart preview -->
+        <svg width="200" height="120" viewBox="0 0 200 120">
+          <rect width="200" height="120" fill="#2D2D2D"/>
+          <!-- Tables preview -->
+          <circle cx="35" cy="35" r="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <circle cx="35" cy="35" r="12" fill="#444"/>
+          <circle cx="90" cy="35" r="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <circle cx="90" cy="35" r="12" fill="#444"/>
+          <circle cx="145" cy="35" r="20" fill="none" stroke="#E8913A" stroke-width="2"/>
+          <circle cx="145" cy="35" r="12" fill="#4A3000"/>
+          <circle cx="35" cy="90" r="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <circle cx="35" cy="90" r="12" fill="#444"/>
+          <circle cx="90" cy="90" r="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <circle cx="90" cy="90" r="12" fill="#444"/>
+          <circle cx="145" cy="90" r="20" fill="none" stroke="#555" stroke-width="1.5"/>
+          <circle cx="145" cy="90" r="12" fill="#444"/>
+        </svg>
+        <div class="preview-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          </svg>
+          תרשים נוכחי: 12 שולחנות
+        </div>
+      </div>
+    </div>
+
+    <!-- Download Options -->
+    <div class="download-section">
+      <div class="download-title">אפשרויות הורדה</div>
+
+      <div class="download-item">
+        <div class="chevron">‹</div>
+        <div class="download-info">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="download-type">PNG</span>
+            <h4>מפת ישיבה</h4>
+          </div>
+          <p>תמונה באיכות גבוהה של סידור</p>
+        </div>
+        <div class="download-icon orange">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="download-item">
+        <div class="chevron">‹</div>
+        <div class="download-info">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="download-type">CSV</span>
+            <h4>רשימת אורחים</h4>
+          </div>
+          <p>טבלת אקסל עם שיוך שולחנות והערות</p>
+        </div>
+        <div class="download-icon blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Digital Share -->
+    <div class="share-section">
+      <div class="share-title">שיתוף דיגיטלי</div>
+      <div class="share-card">
+        <h4>קישור לצפייה בלבד</h4>
+        <p>שתפו קישור שמאפשר צפייה במפה ללא אפשרות עריכה.</p>
+        <div class="share-row">
+          <button class="btn-orange" style="flex:1;padding:12px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            העתק קישור
+          </button>
+          <div style="width:44px;height:44px;border-radius:12px;border:1.5px solid #BFE7FF;background:white;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="email-section">
+      <div style="text-align:center;font-size:14px;font-weight:600;margin-bottom:8px">שלח שירות למייל ההפקה</div>
+      <div class="email-row" style="justify-content:center">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        הנתונים מאובטחים וזמינים להורדה בכל עת
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      </svg>
+      יצוא
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+      סידור ישיבה
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+      </svg>
+      אורחים
+    </div>
+    <div class="tab-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      דאשבורד
+    </div>
+  </div>
+</div>
+</body>
+</html>

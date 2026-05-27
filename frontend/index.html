@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EventFlow – כל המסכים</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, 'Segoe UI', Arial, sans-serif; background: #1A1A2E; color: white; padding: 40px 20px; min-height: 100vh; }
+h1 { text-align: center; font-size: 32px; margin-bottom: 6px; }
+.subtitle { text-align: center; color: #aaa; margin-bottom: 40px; font-size: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; }
+.card {
+  background: #16213E; border-radius: 16px; padding: 20px; cursor: pointer;
+  text-decoration: none; color: white; transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #0F3460; display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(232,145,58,0.3); border-color: #E8913A; }
+.icon { width: 52px; height: 52px; border-radius: 14px; background: #E8913A; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.card-title { font-size: 16px; font-weight: 700; text-align: center; }
+.card-sub { font-size: 13px; color: #888; text-align: center; }
+.section-label { grid-column: 1/-1; font-size: 18px; font-weight: 700; color: #E8913A; padding: 10px 0 4px; border-bottom: 1px solid #0F3460; }
+footer { text-align: center; margin-top: 50px; color: #555; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>EventFlow 🎊</h1>
+<p class="subtitle">כל 13 המסכים של האפליקציה – לחצו על מסך לפתיחה</p>
+
+<div class="grid">
+  <div class="section-label">👤 מסכי אורח</div>
+
+  <a class="card" href="screen1-event-details.html" target="_blank">
+    <div class="icon">🎉</div>
+    <div class="card-title">פרטי האירוע</div>
+    <div class="card-sub">הזמנה עם תאריך, שעה ומיקום</div>
+  </a>
+
+  <a class="card" href="screen2-rsvp.html" target="_blank">
+    <div class="icon">✅</div>
+    <div class="card-title">אישור הגעה</div>
+    <div class="card-sub">RSVP עם בקשת שיר ואורחים</div>
+  </a>
+
+  <a class="card" href="screen3-qr-code.html" target="_blank">
+    <div class="icon">📱</div>
+    <div class="card-title">כרטיס כניסה</div>
+    <div class="card-sub">קוד QR אישי לכניסה לאירוע</div>
+  </a>
+
+  <a class="card" href="screen4-edit-rsvp.html" target="_blank">
+    <div class="icon">✏️</div>
+    <div class="card-title">עריכת אישור הגעה</div>
+    <div class="card-sub">עדכון פרטי ההגעה</div>
+  </a>
+
+  <a class="card" href="screen5-my-seat.html" target="_blank">
+    <div class="icon">💺</div>
+    <div class="card-title">היכן אני יושב</div>
+    <div class="card-sub">מיקום שולחן ומפת האולם</div>
+  </a>
+
+  <div class="section-label">🎩 מסכי מארגן</div>
+
+  <a class="card" href="screen6-dashboard.html" target="_blank">
+    <div class="icon">📊</div>
+    <div class="card-title">ניהול אירוע</div>
+    <div class="card-sub">דאשבורד ראשי עם סטטיסטיקות</div>
+  </a>
+
+  <a class="card" href="screen7-guest-list.html" target="_blank">
+    <div class="icon">👥</div>
+    <div class="card-title">רשימת מוזמנים</div>
+    <div class="card-sub">כל האורחים עם פילטרים</div>
+  </a>
+
+  <a class="card" href="screen8-guest-profile.html" target="_blank">
+    <div class="icon">🧑</div>
+    <div class="card-title">פרטי אורח</div>
+    <div class="card-sub">פרופיל מלא עם RSVP ו-QR</div>
+  </a>
+
+  <a class="card" href="screen9-seating-editor.html" target="_blank">
+    <div class="icon">🪑</div>
+    <div class="card-title">עורך סידור ישיבה</div>
+    <div class="card-sub">ניהול שולחנות ושיבוצים</div>
+  </a>
+
+  <a class="card" href="screen10-seating-drag.html" target="_blank">
+    <div class="icon">🗺️</div>
+    <div class="card-title">סידור ישיבה – גרירה</div>
+    <div class="card-sub">תצוגת מפה עם drag & drop</div>
+  </a>
+
+  <a class="card" href="screen11-assign-seat.html" target="_blank">
+    <div class="icon">📌</div>
+    <div class="card-title">שיוך מושב</div>
+    <div class="card-sub">bottom sheet לשיוך אורח לשולחן</div>
+  </a>
+
+  <a class="card" href="screen12-export.html" target="_blank">
+    <div class="icon">📤</div>
+    <div class="card-title">יצוא ושיתוף</div>
+    <div class="card-sub">PNG, CSV, קישור לצפייה</div>
+  </a>
+
+  <a class="card" href="screen13-guest-preview.html" target="_blank">
+    <div class="icon">👁️</div>
+    <div class="card-title">תצוגה מקדימה לאורח</div>
+    <div class="card-sub">מה האורח יראה – שולחן ומפה</div>
+  </a>
+</div>
+
+<footer>EventFlow App – כל הזכויות שמורות · 13 מסכים</footer>
+</body>
+</html>
