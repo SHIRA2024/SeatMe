@@ -1,100 +1,161 @@
-SeatMe Installation Guide
-Project Overview
+# SeatMe Installation Guide
 
-SeatMe is a cloud-based serverless system for managing event invitations, RSVP confirmations, and smart seating arrangements.
+## Project Overview
+
+SeatMe is a cloud-based serverless event management system designed to help event hosts manage guests, RSVP responses, and seating arrangements.
 
 The system is built using AWS cloud services and includes:
 
-Frontend web application
-Backend Lambda functions
-DynamoDB database
-API Gateway
-SNS messaging integration
-Seating arrangement algorithm
-Current Project Status
+* Frontend web application
+* Backend AWS Lambda functions
+* Amazon DynamoDB database
+* Amazon API Gateway
+* Amazon SNS messaging service
+* Seating arrangement algorithm
+
+---
+
+## Current Project Status
 
 At the current development stage, the project includes:
 
-Initial DynamoDB setup
-Seed data scripts
-Frontend prototype screens
-Backend Lambda structure
-Documentation structure
+* DynamoDB single-table database design
+* Seed data scripts
+* Frontend prototype screens
+* Backend Lambda structure
+* Initial project documentation
+* GitHub project repository
 
-Additional deployment steps will be added later during the project development process.
+Additional deployment steps will be added as the project progresses.
 
-Technologies Used
-AWS Services
-Amazon DynamoDB
-AWS Lambda
-Amazon API Gateway
-Amazon S3
-Amazon SNS
-Programming Languages
-Python
-HTML
-CSS
-JavaScript
-DynamoDB Setup Instructions
-Step 1 — Open AWS Academy Learner Lab
-Open AWS Academy Learner Lab.
-Click Start Lab.
-Wait until the AWS indicator becomes green.
-Open AWS Console.
-Step 2 — Open CloudShell
-Inside AWS Console, open CloudShell.
-Upload the following file:
+---
 
-database/create_tables.py
+## Technologies Used
 
-Step 3 — Create DynamoDB Tables
+### AWS Services
 
-Run the following command:
+* Amazon DynamoDB
+* AWS Lambda
+* Amazon API Gateway
+* Amazon S3
+* Amazon SNS
 
-python3 create_tables.py
+### Programming Languages
 
-This script creates the following tables:
+* Python
+* HTML
+* CSS
+* JavaScript
 
-Hosts
-Events
-Guests
-Tables
-Step 4 — Insert Seed Data
+---
 
-Upload the following file:
+## DynamoDB Architecture
 
-database/seed_data.py
+The project uses a Single Table Design approach in DynamoDB.
+
+Table name:
+
+* SeatMe
+
+The table stores all system entities using the `entityType` attribute.
+
+Current entity types:
+
+* HOST
+* EVENT
+* GUEST
+* TABLE
+
+This approach simplifies data management and follows DynamoDB best practices for small serverless applications.
+
+---
+
+## DynamoDB Setup Instructions
+
+### Step 1 – Open AWS Academy Learner Lab
+
+1. Open AWS Academy Learner Lab.
+2. Click **Start Lab**.
+3. Wait until the AWS indicator becomes green.
+4. Open AWS Console.
+
+---
+
+### Step 2 – Open CloudShell
+
+1. Open CloudShell inside AWS Console.
+2. Upload the following file:
+
+database/create_single_table.py
+
+---
+
+### Step 3 – Create the DynamoDB Table
 
 Run:
 
-python3 seed_data.py
+```bash
+python3 create_single_table.py
+```
 
-This script inserts example data for:
+This script creates the DynamoDB table:
 
-One host
-One event
-Example guests
-Example seating tables
-Expected Result
+* SeatMe
 
-After running the scripts, the DynamoDB tables should appear in:
+---
 
-AWS Console → DynamoDB → Tables
+### Step 4 – Insert Seed Data
 
-The tables should contain example data for testing and development.
+Upload:
 
-Important Notes
-Do not click Reset in AWS Academy Learner Lab.
-Reset permanently deletes all AWS resources created in the lab.
-The project currently uses the us-east-1 AWS region.
-All project code should be backed up to GitHub regularly.
-Future Deployment Steps
+database/seed_single_table.py
+
+Run:
+
+```bash
+python3 seed_single_table.py
+```
+
+This script inserts example data into the SeatMe table.
+
+Example records include:
+
+* One host
+* One event
+* Example guests
+* Example seating tables
+
+---
+
+## Expected Result
+
+After running the scripts, the following table should appear:
+
+AWS Console → DynamoDB → Tables → SeatMe
+
+The table should contain example records for development and testing purposes.
+
+---
+
+## Important Notes
+
+* Do not click **Reset** in AWS Academy Learner Lab.
+* Reset permanently deletes all AWS resources created in the lab.
+* The project currently uses the **us-east-1** AWS region.
+* All project code should be backed up regularly to GitHub.
+* The SeatMe table serves as the primary data store for the application.
+
+---
+
+## Future Deployment Steps
 
 The final version of this guide will later include:
 
-Lambda deployment instructions
-API Gateway configuration
-Frontend deployment to S3
-SNS configuration
-Full system deployment instructions
-Production architecture setup
+* Lambda deployment instructions
+* API Gateway configuration
+* Frontend deployment to Amazon S3
+* SNS configuration
+* Full system deployment process
+* Production architecture setup
+* User authentication configuration
+* System monitoring and logging
