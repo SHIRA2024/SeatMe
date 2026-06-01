@@ -32,9 +32,17 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Host not found'})
         }
 
-    guests = response['Item'].get('guests', {})
+    item = response['Item']
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'guests': guests}, default=str)
+        'body': json.dumps({
+            'email': item.get('email'),
+            'name': item.get('name'),
+            'event_name': item.get('event_name'),
+            'event_date': item.get('event_date'),
+            'event_location': item.get('event_location'),
+            'tables': item.get('tables', {}),
+            'guest_count': len(item.get('guests', {}))
+        }, default=str)
     }

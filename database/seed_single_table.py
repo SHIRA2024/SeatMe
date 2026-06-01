@@ -1,9 +1,9 @@
 """
 SeatMe Project
-Single Table Seed Data Script
+Seed Data Script
 
-This script inserts example data into the
-SeatMe DynamoDB table.
+Inserts example host rows with nested guests
+into the SeatMe DynamoDB table.
 """
 
 import boto3
@@ -12,56 +12,34 @@ dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
 table = dynamodb.Table('SeatMe')
 
-# Host
 table.put_item(
     Item={
-        'id': 'host1',
-        'entityType': 'HOST',
-        'fullName': 'Shira Ben Artzi',
-        'email': 'shira@example.com'
-    }
-)
-
-# Event
-table.put_item(
-    Item={
-        'id': 'event1',
-        'entityType': 'EVENT',
-        'hostId': 'host1',
-        'eventName': 'Wedding Event',
-        'eventDate': '2026-08-01'
-    }
-)
-
-# Guests
-table.put_item(
-    Item={
-        'id': 'guest1',
-        'entityType': 'GUEST',
-        'eventId': 'event1',
-        'fullName': 'Daniel Cohen',
-        'rsvpStatus': 'approved'
-    }
-)
-
-table.put_item(
-    Item={
-        'id': 'guest2',
-        'entityType': 'GUEST',
-        'eventId': 'event1',
-        'fullName': 'Noa Levi',
-        'rsvpStatus': 'pending'
-    }
-)
-
-# Tables
-table.put_item(
-    Item={
-        'id': 'table1',
-        'entityType': 'TABLE',
-        'eventId': 'event1',
-        'tableNumber': 1,
-        'capacity': 10
+        'email': 'shira@example.com',
+        'name': 'Shira Ben Artzi',
+        'event_name': 'Wedding of Shira & Daniel',
+        'event_date': '2026-08-01',
+        'event_location': 'Tel Aviv',
+        'guests': {
+            'daniel@example.com': {
+                'name': 'Daniel Cohen',
+                'rsvp': 'yes',
+                'table': 1,
+                'category': 'family',
+                'count': 2
+            },
+            'noa@example.com': {
+                'name': 'Noa Levi',
+                'rsvp': '?',
+                'table': None,
+                'category': 'friend',
+                'count': 1
+            }
+        },
+        'tables': {
+            '1': {'capacity': 10},
+            '2': {'capacity': 8},
+            '3': {'capacity': 6}
+        }
     }
 )
 

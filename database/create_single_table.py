@@ -1,9 +1,12 @@
 """
 SeatMe Project
-Single DynamoDB Table Creation Script
+DynamoDB Table Creation Script
 
-This script creates a single DynamoDB table
-that stores all entities used by the system.
+Each row represents a host with nested guests.
+Schema:
+  email (str) - partition key
+  name (str)
+  guests (map) - { guestId: { name, email, rsvp, table } }
 """
 
 import boto3
@@ -14,13 +17,13 @@ table = dynamodb.create_table(
     TableName='SeatMe',
     KeySchema=[
         {
-            'AttributeName': 'id',
+            'AttributeName': 'email',
             'KeyType': 'HASH'
         }
     ],
     AttributeDefinitions=[
         {
-            'AttributeName': 'id',
+            'AttributeName': 'email',
             'AttributeType': 'S'
         }
     ],
