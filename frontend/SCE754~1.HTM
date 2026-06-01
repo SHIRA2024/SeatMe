@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – הגדרות אירוע</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
+.cover-upload { border:2px dashed var(--gray4);border-radius:var(--radius-lg);padding:40px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--gray6);position:relative;overflow:hidden; }
+.cover-upload:hover { border-color:var(--orange);background:var(--orange-light); }
+.cover-upload.has-image { border-style:solid;border-color:var(--orange-mid); }
+.cover-preview { width:100%;height:180px;object-fit:cover;border-radius:var(--radius);display:none; }
+.event-type-btn { border:2px solid var(--gray4);border-radius:var(--radius);padding:14px 18px;cursor:pointer;transition:all 0.15s;background:white;text-align:center;font-family:inherit; }
+.event-type-btn:hover { border-color:var(--orange); }
+.event-type-btn.selected { border-color:var(--orange);background:var(--orange-light); }
+.event-type-btn .type-icon { font-size:28px;margin-bottom:6px; }
+.event-type-btn .type-name { font-size:13px;font-weight:700;display:block; }
+.success-toast { position:fixed;bottom:28px;right:50%;transform:translateX(50%);background:#1C1C1C;color:white;padding:12px 24px;border-radius:var(--radius-lg);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:9999; }
+.success-toast.show { opacity:1; }
+.danger-zone { border:1.5px solid var(--red);border-radius:var(--radius-lg);padding:20px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left" id="topbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="history.back()">ביטול</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          שמור הגדרות
+        </button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">הגדרות אירוע</div>
+          <div class="page-subtitle">ערוך את פרטי האירוע שלך</div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          שמור שינויים
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;max-width:1080px">
+
+        <!-- Main form -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Event Type -->
+          <div class="card">
+            <div class="section-title">סוג אירוע</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+              <button class="event-type-btn selected" onclick="selectType(this)"><div class="type-icon">💍</div><span class="type-name">חתונה</span></button>
+              <button class="event-type-btn" onclick="selectType(this)"><div class="type-icon">🎂</div><span class="type-name">יום הולדת</span></button>
+              <button class="event-type-btn" onclick="selectType(this)"><div class="type-icon">🎉</div><span class="type-name">מסיבה</span></button>
+              <button class="event-type-btn" onclick="selectType(this)"><div class="type-icon">🏢</div><span class="type-name">ארגוני</span></button>
+              <button class="event-type-btn" onclick="selectType(this)"><div class="type-icon">✨</div><span class="type-name">אחר</span></button>
+            </div>
+          </div>
+
+          <!-- Basic Details -->
+          <div class="card">
+            <div class="section-title">פרטים בסיסיים</div>
+            <div style="display:flex;flex-direction:column;gap:16px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שם האירוע *</label>
+                <input class="input" type="text" value="החתונה של נועה וגיא" id="eventName">
+              </div>
+              <div class="grid-2" style="gap:16px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">שם בעל/ת האירוע</label>
+                  <input class="input" type="text" value="נועה כהן">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">שם שני (שותף/ה)</label>
+                  <input class="input" type="text" value="גיא לוי">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">תיאור קצר</label>
+                <textarea class="input" rows="2" placeholder="משפט קצר שיופיע בהזמנות...">מסיבת חתונה בגן הקסום של תל אביב</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date & Time -->
+          <div class="card">
+            <div class="section-title">תאריך ושעה</div>
+            <div class="grid-2" style="gap:16px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">תאריך האירוע *</label>
+                <input class="input" type="date" value="2024-09-15">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שעת פתיחת שערים</label>
+                <input class="input" type="time" value="18:30">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שעת הטקס</label>
+                <input class="input" type="time" value="19:00">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שעת סיום משוערת</label>
+                <input class="input" type="time" value="23:30">
+              </div>
+            </div>
+          </div>
+
+          <!-- Venue -->
+          <div class="card">
+            <div class="section-title">מקום האירוע</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שם האולם / הגן *</label>
+                <input class="input" type="text" value="הגן הקסום">
+              </div>
+              <div class="grid-2" style="gap:14px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">כתובת מלאה</label>
+                  <input class="input" type="text" value="רחוב הורדים 12, תל אביב">
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label class="form-label">עיר</label>
+                  <input class="input" type="text" value="תל אביב">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">הוראות הגעה (אופציונלי)</label>
+                <textarea class="input" rows="2" placeholder="כניסה מצד שמאל של הבניין..."></textarea>
+              </div>
+              <div style="background:var(--blue-light);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:10px;border:1px solid #BBDEFB">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1976D2" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span style="font-size:13px;color:#1565C0;font-weight:500">רחוב הורדים 12, תל אביב · <a href="#" style="color:#1565C0">צפה במפה</a></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cover Image -->
+          <div class="card">
+            <div class="section-title">תמונת שער</div>
+            <div class="cover-upload" onclick="document.getElementById('coverInput').click()">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gray3)" stroke-width="1.5" style="margin-bottom:10px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <div style="font-weight:700;color:var(--dark);margin-bottom:4px">גרור תמונה לכאן</div>
+              <div style="font-size:13px;color:var(--gray2)">JPG, PNG עד 5MB · מומלץ 1200×600px</div>
+              <input type="file" id="coverInput" accept="image/*" style="display:none" onchange="previewCover(this)">
+            </div>
+          </div>
+
+          <!-- Capacity -->
+          <div class="card">
+            <div class="section-title">קיבולת ואורחים</div>
+            <div class="grid-2" style="gap:16px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מספר אורחים מתוכנן</label>
+                <input class="input" type="number" value="250">
+                <div class="form-hint">סה"כ כולל כל הנפשות</div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מספר שולחנות</label>
+                <input class="input" type="number" value="25">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">קיבולת ממוצעת לשולחן</label>
+                <input class="input" type="number" value="10">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מגבלת הזמנות מקסימום</label>
+                <input class="input" type="number" value="280">
+                <div class="form-hint">כולל מאגר ביטולים</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Danger Zone -->
+          <div class="danger-zone">
+            <div style="font-size:15px;font-weight:700;color:var(--red);margin-bottom:8px">אזור מסוכן</div>
+            <div style="font-size:13px;color:var(--gray2);margin-bottom:14px">פעולות אלה אינן ניתנות לביטול. יש לנהוג בזהירות.</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-danger btn-sm" onclick="confirm('האם למחוק את כל נתוני האורחים?')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                מחק את כל האורחים
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="confirm('האם לאפס את כל סידורי הישיבה?')">
+                אפס סידורי ישיבה
+              </button>
+              <button class="btn btn-danger btn-sm" style="background:var(--red);color:white;border-color:var(--red)" onclick="confirm('האם למחוק את האירוע לצמיתות?')">
+                מחק אירוע
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar summary -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Preview Card -->
+          <div class="card" style="background:linear-gradient(160deg,var(--orange) 0%,var(--orange-hover) 100%);border:none;color:white;padding:24px">
+            <div style="font-size:11px;font-weight:600;opacity:0.8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">תצוגה מקדימה</div>
+            <div style="font-size:20px;font-weight:800;margin-bottom:4px" id="previewTitle">החתונה של נועה וגיא</div>
+            <div style="font-size:13px;opacity:0.85;margin-bottom:14px">📅 15 ספטמבר 2024 · 19:00</div>
+            <div style="font-size:13px;opacity:0.85">📍 הגן הקסום, תל אביב</div>
+          </div>
+
+          <!-- Stats -->
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">סטטיסטיקות</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">אורחים ברשימה</span>
+                <span style="font-weight:700">250</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">אחוז מילוי</span>
+                <span style="font-weight:700;color:var(--orange)">89%</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">שולחנות מוגדרים</span>
+                <span style="font-weight:700">25</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">נוצר בתאריך</span>
+                <span style="font-weight:700">01.03.2024</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Links -->
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px">קישורים לאירוע</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div>
+                <div style="font-size:11px;color:var(--gray2);margin-bottom:4px">קישור הזמנה לאורחים</div>
+                <div style="display:flex;gap:6px">
+                  <div style="flex:1;background:var(--gray5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">eflow.me/noa-gia</div>
+                  <button class="btn btn-secondary btn-sm" onclick="copyLink('eflow.me/noa-gia')">העתק</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;color:var(--gray2);margin-bottom:4px">קישור לסידורי ישיבה</div>
+                <div style="display:flex;gap:6px">
+                  <div style="flex:1;background:var(--gray5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">eflow.me/noa-gia-seats</div>
+                  <button class="btn btn-secondary btn-sm" onclick="copyLink('eflow.me/noa-gia-seats')">העתק</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-lg" onclick="saveSettings()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            שמור הגדרות
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="success-toast" id="toast"></div>
+
+<script src="_shell.js"></script>
+<script>
+renderShell({ active:'settings', pageTitle:'הגדרות אירוע' });
+
+document.getElementById('eventName').addEventListener('input', e => {
+  document.getElementById('previewTitle').textContent = e.target.value || 'שם האירוע';
+});
+
+function selectType(btn) {
+  document.querySelectorAll('.event-type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function previewCover(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const wrap = input.closest('.cover-upload');
+      wrap.style.backgroundImage = `url(${e.target.result})`;
+      wrap.style.backgroundSize = 'cover';
+      wrap.style.backgroundPosition = 'center';
+      wrap.style.minHeight = '160px';
+      wrap.classList.add('has-image');
+      wrap.querySelector('svg').style.display = 'none';
+      wrap.querySelectorAll('div').forEach(d => d.style.color = 'white');
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function copyLink(text) {
+  navigator.clipboard.writeText(text);
+  showToast('הקישור הועתק!');
+}
+
+function saveSettings() {
+  showToast('ההגדרות נשמרו בהצלחה ✓');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>

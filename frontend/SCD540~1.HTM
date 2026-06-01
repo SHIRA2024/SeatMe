@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – כניסה למארגנים</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    background: linear-gradient(135deg, #1C1C1C 0%, #2D2D2D 50%, #1a1a2e 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Decorative background circles */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -160px; right: -160px;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,145,58,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -120px; left: -120px;
+    width: 380px; height: 380px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(25,118,210,0.13) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-wrapper {
+    display: flex;
+    width: 940px;
+    min-height: 580px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.55);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Left Panel (branding) ── */
+  .login-brand {
+    width: 380px;
+    flex-shrink: 0;
+    background: linear-gradient(160deg, #E8913A 0%, #D4802E 60%, #B8681C 100%);
+    padding: 48px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-brand::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .login-brand::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .brand-logo {
+    display: flex; align-items: center; gap: 12px; position: relative; z-index: 1;
+  }
+  .brand-logo-icon {
+    width: 48px; height: 48px; background: rgba(0,0,0,0.25); border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  .brand-logo-name { font-size: 24px; font-weight: 800; color: white; }
+
+  .brand-center { position: relative; z-index: 1; }
+  .brand-headline {
+    font-size: 28px; font-weight: 800; color: white; line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .brand-sub {
+    font-size: 15px; color: rgba(255,255,255,0.8); line-height: 1.7;
+  }
+
+  .brand-features { position: relative; z-index: 1; }
+  .brand-feature {
+    display: flex; align-items: center; gap: 10px;
+    color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .brand-feature-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.7); flex-shrink: 0;
+  }
+
+  /* ── Right Panel (form) ── */
+  .login-form-panel {
+    flex: 1;
+    background: var(--white);
+    padding: 52px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .login-form-header {
+    margin-bottom: 36px;
+  }
+  .login-form-header h1 {
+    font-size: 26px; font-weight: 800; color: var(--dark); margin-bottom: 6px;
+  }
+  .login-form-header p {
+    font-size: 14px; color: var(--gray2);
+  }
+
+  /* Input with icon */
+  .input-icon-wrap {
+    position: relative;
+  }
+  .input-icon-wrap .input {
+    padding-right: 44px;
+  }
+  .input-icon-wrap .field-icon {
+    position: absolute;
+    right: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--gray3); pointer-events: none;
+  }
+
+  /* Password toggle */
+  .input-icon-wrap .pw-toggle {
+    position: absolute;
+    left: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; padding: 2px;
+    color: var(--gray3); display: flex;
+  }
+  .input-icon-wrap .pw-toggle:hover { color: var(--dark); }
+
+  .login-btn {
+    width: 100%; justify-content: center;
+    padding: 14px; font-size: 15px; border-radius: var(--radius);
+    margin-top: 8px;
+    position: relative; overflow: hidden;
+  }
+  .login-btn:active { transform: scale(0.98); }
+
+  .forgot-row {
+    display: flex; justify-content: flex-start; margin-top: 6px;
+  }
+  .forgot-link {
+    font-size: 13px; color: var(--orange); text-decoration: none;
+    background: none; border: none; cursor: pointer; font-family: inherit;
+  }
+  .forgot-link:hover { text-decoration: underline; }
+
+  .divider-or {
+    display: flex; align-items: center; gap: 12px;
+    margin: 28px 0; color: var(--gray3); font-size: 13px;
+  }
+  .divider-or::before, .divider-or::after {
+    content: ''; flex: 1; height: 1px; background: var(--gray4);
+  }
+
+  .sso-btn {
+    width: 100%; justify-content: center;
+    padding: 11px; border-radius: var(--radius);
+    border: 1.5px solid var(--gray4);
+    background: var(--white); color: var(--dark);
+    font-size: 14px; font-weight: 600; font-family: inherit;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .sso-btn:hover { background: var(--gray5); border-color: var(--gray3); }
+
+  .login-footer {
+    margin-top: 36px; font-size: 12px; color: var(--gray3); text-align: center;
+  }
+  .login-footer a { color: var(--orange); text-decoration: none; }
+
+  /* Error state */
+  .input.is-error { border-color: var(--red); }
+  .field-error { font-size: 12px; color: var(--red); margin-top: 5px; display: none; }
+
+  /* Loading animation on btn */
+  .spin { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Success overlay */
+  .success-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(28,28,28,0.6);
+    align-items: center; justify-content: center;
+  }
+  .success-overlay.show { display: flex; }
+  .success-card {
+    background: white; border-radius: 20px; padding: 40px 48px;
+    text-align: center; box-shadow: var(--shadow-lg);
+    animation: popIn 0.35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .success-circle {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--green-light); margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-circle">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div style="font-size:20px;font-weight:800;color:var(--dark);margin-bottom:6px">ברוך הבא!</div>
+    <div style="font-size:14px;color:var(--gray2)">מעביר אותך לדאשבורד...</div>
+  </div>
+</div>
+
+<div class="login-wrapper">
+
+  <!-- Brand Panel (Right in RTL = appears on right visually, but in DOM first for RTL layout) -->
+  <div class="login-form-panel">
+    <div class="login-form-header">
+      <h1>כניסה למארגנים</h1>
+      <p>היכנס לחשבון שלך כדי לנהל את האירוע</p>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label" for="emailInput">כתובת אימייל</label>
+        <div class="input-icon-wrap">
+          <svg class="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input class="input" id="emailInput" type="email" placeholder="your@email.com" autocomplete="email" dir="ltr" style="text-align:left">
+        </div>
+        <div class="field-error" id="emailError">נא להזין כתובת אימייל תקינה</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:6px">
+        <label class="form-label" for="passwordInput">סיסמה</label>
+        <div class="input-icon-wrap">
+          <svg class="field-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="input" id="passwordInput" type="password" placeholder="הזן סיסמה" autocomplete="current-password">
+          <button type="button" class="pw-toggle" id="pwToggle" onclick="togglePassword()" title="הצג/הסתר סיסמה">
+            <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="field-error" id="passwordError">הסיסמה שגויה, נסה שוב</div>
+      </div>
+
+      <div class="forgot-row">
+        <button type="button" class="forgot-link" onclick="alert('נשלח לך קישור לאיפוס סיסמה לאימייל')">שכחת סיסמה?</button>
+      </div>
+
+      <div style="margin-top:24px">
+        <button type="submit" class="btn btn-primary login-btn" id="loginBtn">
+          <span id="loginBtnText">כניסה לאזור מארגנים</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="divider-or">או</div>
+
+    <button class="sso-btn" onclick="handleSSO()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      כניסה עם Google
+    </button>
+
+    <div class="login-footer">
+      עוד אין לך חשבון? <a href="#">צור חשבון חדש</a> · <a href="index.html">חזור לדף הבית</a>
+    </div>
+  </div>
+
+  <!-- Brand Panel -->
+  <div class="login-brand">
+    <div class="brand-logo">
+      <div class="brand-logo-icon">✦</div>
+      <div class="brand-logo-name">EventFlow</div>
+    </div>
+
+    <div class="brand-center">
+      <div class="brand-headline">ניהול אירועים<br>בקלות וביעילות</div>
+      <div class="brand-sub">
+        הכלי המקצועי לניהול רשימות אורחים,
+        סידורי ישיבה ותיאום מלא של האירוע שלך.
+      </div>
+    </div>
+
+    <div class="brand-features">
+      <div class="brand-feature"><div class="brand-feature-dot"></div>ניהול רשימת אורחים בזמן אמת</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>עורך סידור ישיבה ויזואלי</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>שיבוץ אוטומטי חכם</div>
+      <div class="brand-feature"><div class="brand-feature-dot"></div>ייצוא ושיתוף בקליק</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Toggle password visibility
+  function togglePassword() {
+    const input = document.getElementById('passwordInput');
+    const icon  = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+      input.type = 'password';
+      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  }
+
+  // Form validation + login simulation
+  function handleLogin(e) {
+    e.preventDefault();
+    const email    = document.getElementById('emailInput');
+    const password = document.getElementById('passwordInput');
+    const emailErr = document.getElementById('emailError');
+    const passErr  = document.getElementById('passwordError');
+    let valid = true;
+
+    // Reset
+    email.classList.remove('is-error');
+    password.classList.remove('is-error');
+    emailErr.style.display = 'none';
+    passErr.style.display  = 'none';
+
+    // Validate email
+    if (!email.value || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+      email.classList.add('is-error');
+      emailErr.style.display = 'block';
+      valid = false;
+    }
+
+    // Validate password
+    if (!password.value || password.value.length < 4) {
+      password.classList.add('is-error');
+      passErr.style.display = 'block';
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    // Simulate loading
+    const btn     = document.getElementById('loginBtn');
+    const btnText = document.getElementById('loginBtnText');
+    btn.disabled  = true;
+    btnText.innerHTML = '<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> מתחבר...';
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btnText.textContent = 'כניסה לאזור מארגנים';
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { location.href = 'screen6-dashboard.html'; }, 1400);
+    }, 1200);
+  }
+
+  function handleSSO() {
+    const btn = document.querySelector('.sso-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> מתחבר...';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> כניסה עם Google';
+      document.getElementById('successOverlay').classList.add('show');
+      setTimeout(() => { location.href = 'screen6-dashboard.html'; }, 1400);
+    }, 1000);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – תצוגת מפה</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.canvas-area { background:#F0EDE8; border-radius:var(--radius-lg); position:relative; height:520px; overflow:hidden; }
+.ft { position:absolute; border-radius:50%; background:white; border:2px solid var(--gray4); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:grab; box-shadow:var(--shadow-sm); transition:border-color 0.15s; }
+.ft:hover { border-color:var(--orange); box-shadow:var(--shadow); }
+.ft.sel { border:3px solid var(--orange); background:var(--orange-light); }
+.ft .tl { font-size:10px; color:var(--gray2); }
+.ft .tn { font-size:22px; font-weight:900; line-height:1; }
+.ft .tc { font-size:11px; color:var(--gray2); margin-top:3px; background:var(--gray5); padding:1px 8px; border-radius:10px; }
+.ft.sel .tc { background:white; color:var(--orange); }
+.drag-card { position:absolute; background:white; border:1px solid var(--gray4); border-radius:var(--radius); padding:10px 14px; box-shadow:var(--shadow); display:flex; align-items:center; gap:10px; min-width:160px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left">
+        <button class="btn btn-secondary btn-sm" onclick="location='screen9-seating-editor.html'">← תצוגת רשת</button>
+        <button class="btn btn-primary btn-sm">שמור פריסה</button>
+      </div>
+    </header>
+    <main class="page-content">
+      <!-- Tip -->
+      <div style="background:white;border:1.5px solid var(--gray4);border-radius:var(--radius-lg);padding:14px 20px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--orange-light);border:1.5px solid var(--orange-mid);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div>
+          <strong>טיפ למארח:</strong>
+          <span style="font-size:13px;color:var(--gray2);margin-right:6px">גרור אורחים מהרשימה בצד אל השולחנות כדי לשייך אותם בקלות.</span>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 260px;gap:20px">
+        <!-- Canvas -->
+        <div class="canvas-area">
+          <div class="ft" style="width:110px;height:110px;left:60px;top:80px"><div class="tl">שולחן</div><div class="tn">1</div><div class="tc">8/10</div></div>
+          <div class="ft" style="width:110px;height:110px;left:220px;top:40px"><div class="tl">שולחן</div><div class="tn">2</div><div class="tc">10/10</div></div>
+          <div class="ft sel" style="width:120px;height:120px;left:380px;top:160px"><div class="tl">שולחן</div><div class="tn" style="color:var(--orange)">3</div><div class="tc">4/12</div></div>
+          <div class="ft" style="width:100px;height:100px;left:60px;top:310px"><div class="tl">שולחן</div><div class="tn">4</div><div class="tc">0/8</div></div>
+          <div class="ft" style="width:110px;height:110px;left:240px;top:330px"><div class="tl">שולחן</div><div class="tn">5</div><div class="tc">6/10</div></div>
+          <div class="ft" style="width:100px;height:100px;left:560px;top:60px"><div class="tl">שולחן</div><div class="tn">6</div><div class="tc">8/10</div></div>
+          <div class="ft" style="width:110px;height:110px;left:580px;top:310px"><div class="tl">שולחן</div><div class="tn">7</div><div class="tc">5/12</div></div>
+          <!-- Drag card near table 1 -->
+          <div class="drag-card" style="left:150px;top:120px">
+            <span style="color:var(--gray3);font-size:14px">⋮⋮</span>
+            <div style="text-align:right;flex:1"><div style="font-size:13px;font-weight:700">דוד כהן</div><div style="font-size:11px;color:var(--gray2)">...גורר לשולחן</div></div>
+            <div style="width:30px;height:30px;border-radius:50%;background:#D1E8FF;display:flex;align-items:center;justify-content:center">👨</div>
+          </div>
+          <!-- Legend -->
+          <div style="position:absolute;bottom:14px;left:14px;display:flex;gap:14px;background:rgba(255,255,255,0.85);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--gray2)">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--orange);display:inline-block"></span>שולחן נבחר</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:white;border:2px solid var(--gray4);display:inline-block"></span>שולחן פנוי</span>
+          </div>
+        </div>
+
+        <!-- Side: unassigned list -->
+        <div class="card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--gray4);display:flex;align-items:center;justify-content:space-between">
+            <span class="badge badge-orange" style="font-size:12px">4</span>
+            <div style="font-weight:700;font-size:14px">אורחים ללא שיוך</div>
+          </div>
+          <div style="padding:10px 12px;border-bottom:1px solid var(--gray4)">
+            <div style="position:relative">
+              <input class="input" style="font-size:12px;padding:7px 12px 7px 32px" type="text" placeholder="חפש...">
+              <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray3)" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:8px">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
+              <span style="color:var(--gray3)">⋮⋮</span>
+              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">משפחת לוי</div><div style="font-size:11px;color:var(--gray2)">4 אורחים</div></div>
+              <span style="color:var(--orange);font-size:18px">+</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
+              <span style="color:var(--gray3)">⋮⋮</span>
+              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">עומר כהן</div><div style="font-size:11px;color:var(--gray2)">2 אורחים</div></div>
+              <span style="color:var(--orange);font-size:18px">+</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
+              <span style="color:var(--gray3)">⋮⋮</span>
+              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">שירה ונועה</div><div style="font-size:11px;color:var(--gray2)">3 אורחים</div></div>
+              <span style="color:var(--orange);font-size:18px">+</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4)">
+              <span style="color:var(--gray3)">⋮⋮</span>
+              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">ד"ר אבו-רמי</div><div style="font-size:11px;color:var(--gray2)">2 אורחים</div></div>
+              <span style="color:var(--orange);font-size:18px">+</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="_shell.js"></script>
+<script>renderShell({ active:'drag', pageTitle:'תצוגת מפה – גרירה' })</script>
+</body>
+</html>

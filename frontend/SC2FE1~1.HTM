@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – עריכת פרטי אורח</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
+.tag-chip { display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid var(--gray4);background:white;cursor:pointer;transition:all 0.15s;color:var(--gray1); }
+.tag-chip:hover { border-color:var(--orange);color:var(--orange); }
+.tag-chip.selected { background:var(--orange);color:white;border-color:var(--orange); }
+.counter-wrap { display:flex;align-items:center;gap:0;border:1.5px solid var(--gray4);border-radius:var(--radius);overflow:hidden;width:fit-content; }
+.counter-btn { width:40px;height:40px;border:none;background:var(--gray5);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background 0.15s; }
+.counter-btn:hover { background:var(--gray4); }
+.counter-val { width:54px;height:40px;text-align:center;border:none;border-right:1.5px solid var(--gray4);border-left:1.5px solid var(--gray4);font-size:16px;font-weight:700;color:var(--dark);font-family:inherit;outline:none; }
+/* Delete modal */
+.modal-bg { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:none;align-items:center;justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal-box { background:white;border-radius:20px;padding:36px 40px;width:440px;box-shadow:var(--shadow-lg);text-align:center;animation:popIn 0.25s ease; }
+@keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+.success-toast { position:fixed;bottom:28px;right:50%;transform:translateX(50%);background:#1C1C1C;color:white;padding:12px 24px;border-radius:var(--radius-lg);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:9999; }
+.success-toast.show { opacity:1; }
+.rsvp-status-box { border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;border:2px solid var(--gray4);transition:all 0.15s;font-weight:600;font-size:14px; }
+.rsvp-status-box.active-confirmed { background:var(--green-light);border-color:var(--green);color:var(--green); }
+.rsvp-status-box.active-declined { background:var(--red-light);border-color:var(--red);color:var(--red); }
+.rsvp-status-box.active-pending { background:var(--orange-light);border-color:var(--orange);color:var(--orange); }
+.rsvp-status-box:hover { border-color:var(--gray3); }
+</style>
+</head>
+<body>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-bg" id="deleteModal">
+  <div class="modal-box">
+    <div style="width:60px;height:60px;border-radius:50%;background:var(--red-light);margin:0 auto 16px;display:flex;align-items:center;justify-content:center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    </div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:8px">מחיקת אורח</div>
+    <div style="font-size:14px;color:var(--gray2);margin-bottom:24px;line-height:1.6">
+      האם אתה בטוח שברצונך למחוק את <strong id="deleteGuestName">עמית כהן</strong> מרשימת האורחים?<br>
+      לא ניתן לבטל פעולה זו.
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">ביטול</button>
+      <button class="btn btn-danger" onclick="confirmDelete()" style="background:var(--red);color:white;border-color:var(--red)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        כן, מחק אורח
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left" id="topbar-right">
+        <button class="btn btn-danger btn-sm" onclick="openDeleteModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          מחק אורח
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="location='screen8-guest-profile.html'">ביטול</button>
+        <button class="btn btn-primary btn-sm" onclick="saveChanges()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          שמור שינויים
+        </button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="btn btn-secondary btn-sm" onclick="location='screen8-guest-profile.html'">← חזור לפרופיל</button>
+          <div>
+            <div class="page-title">עריכת פרטי אורח</div>
+            <div class="page-subtitle">עריכת פרטי עמית כהן</div>
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="openDeleteModal()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          מחק אורח
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;max-width:1000px">
+
+        <!-- Form -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Basic Info -->
+          <div class="card">
+            <div class="section-title">פרטים בסיסיים</div>
+            <div class="grid-2" style="gap:16px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">שם מלא *</label>
+                <input class="input" id="guestName" type="text" value="עמית כהן">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מספר טלפון *</label>
+                <input class="input" id="guestPhone" type="tel" value="054-1234567" dir="ltr" style="text-align:left">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">אימייל</label>
+                <input class="input" id="guestEmail" type="email" value="amit@example.com" dir="ltr" style="text-align:left">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מספר אורחים</label>
+                <div class="counter-wrap">
+                  <button class="counter-btn" onclick="changeCount(-1)">−</button>
+                  <input class="counter-val" id="guestCount" type="number" value="2" min="0" max="20">
+                  <button class="counter-btn" onclick="changeCount(1)">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RSVP Status -->
+          <div class="card">
+            <div class="section-title">סטטוס RSVP</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+              <div class="rsvp-status-box active-confirmed" id="status-confirmed" onclick="setStatus('confirmed')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                מגיע/ה
+              </div>
+              <div class="rsvp-status-box" id="status-declined" onclick="setStatus('declined')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                לא מגיע/ה
+              </div>
+              <div class="rsvp-status-box" id="status-pending" onclick="setStatus('pending')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                טרם השיב
+              </div>
+            </div>
+          </div>
+
+          <!-- Group Tag -->
+          <div class="card">
+            <div class="section-title">קבוצה / שייכות</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <div class="tag-chip selected" onclick="selectTag(this)">משפחה של החתן</div>
+              <div class="tag-chip" onclick="selectTag(this)">משפחה של הכלה</div>
+              <div class="tag-chip" onclick="selectTag(this)">חברים של החתן</div>
+              <div class="tag-chip" onclick="selectTag(this)">חברים של הכלה</div>
+              <div class="tag-chip" onclick="selectTag(this)">עמיתים לעבודה</div>
+              <div class="tag-chip" onclick="selectTag(this)">ילדים</div>
+              <div class="tag-chip" onclick="selectTag(this)">אחר</div>
+            </div>
+          </div>
+
+          <!-- Seating -->
+          <div class="card">
+            <div class="section-title">שיבוץ שולחן</div>
+            <div class="grid-2" style="gap:16px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">מספר שולחן</label>
+                <select class="input" id="tableNum">
+                  <option>— ללא שיבוץ עדיין —</option>
+                  <option>שולחן 1 – VIP</option>
+                  <option>שולחן 2 – משפחה גרעינית</option>
+                  <option>שולחן 3 – משפחה מורחבת</option>
+                  <option selected>שולחן 14 – שולחן משפחה – גרעינית</option>
+                  <option>שולחן 5 – עמיתים</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">הערת שיבוץ</label>
+                <input class="input" type="text" value="ליד משפחת לוי" placeholder="הערה...">
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <button class="btn btn-ghost btn-sm" onclick="location='screen11-assign-seat.html'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                פתח עורך ישיבה
+              </button>
+            </div>
+          </div>
+
+          <!-- Song -->
+          <div class="card">
+            <div class="section-title">בקשת שיר</div>
+            <input class="input" type="text" value="Bohemian Rhapsody - Queen" placeholder="שם השיר...">
+          </div>
+
+          <!-- Notes -->
+          <div class="card">
+            <div class="section-title">הערות</div>
+            <textarea class="input" rows="3" placeholder="מגבלות תזונה, בקשות מיוחדות...">ללא גלוטן</textarea>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Profile summary -->
+          <div class="card" style="text-align:center;padding:24px">
+            <div class="avatar avatar-xl" style="background:#D0E8D0;margin:0 auto 12px">👨</div>
+            <div style="font-size:18px;font-weight:800" id="previewName">עמית כהן</div>
+            <div style="font-size:13px;color:var(--gray2);margin-top:4px" id="previewPhone">054-1234567</div>
+            <div style="margin-top:10px">
+              <span class="badge badge-green">מאושר הגעה</span>
+            </div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="card">
+            <div class="section-title">פעולות מהירות</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen-send-invite.html'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                שלח הזמנה
+              </button>
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen8-guest-profile.html'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                צפה בפרופיל
+              </button>
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen3-qr-code.html'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                הצג QR כרטיס
+              </button>
+            </div>
+          </div>
+
+          <!-- History -->
+          <div class="card">
+            <div class="section-title">היסטוריה</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">נוסף לרשימה</span>
+                <span style="font-weight:600">01.03.2024</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">אישר הגעה</span>
+                <span style="font-weight:600;color:var(--green)">15.04.2024</span>
+              </div>
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:var(--gray2)">שויך לשולחן</span>
+                <span style="font-weight:600">20.05.2024</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-lg" onclick="saveChanges()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            שמור שינויים
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="success-toast" id="toast">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  הפרטים עודכנו בהצלחה!
+</div>
+
+<script src="_shell.js"></script>
+<script>
+renderShell({ active:'guests', pageTitle:'עריכת אורח' });
+
+// Live preview
+document.getElementById('guestName').addEventListener('input', e => {
+  document.getElementById('previewName').textContent = e.target.value || 'שם האורח';
+});
+document.getElementById('guestPhone').addEventListener('input', e => {
+  document.getElementById('previewPhone').textContent = e.target.value || 'מספר טלפון';
+});
+
+function changeCount(delta) {
+  const el = document.getElementById('guestCount');
+  el.value = Math.max(0, Math.min(20, parseInt(el.value||0) + delta));
+}
+
+function selectTag(el) {
+  document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+let currentStatus = 'confirmed';
+function setStatus(s) {
+  currentStatus = s;
+  document.querySelectorAll('.rsvp-status-box').forEach(b => {
+    b.classList.remove('active-confirmed','active-declined','active-pending');
+  });
+  document.getElementById('status-'+s).classList.add('active-'+s);
+}
+
+function saveChanges() {
+  const toast = document.getElementById('toast');
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); location.href = 'screen8-guest-profile.html'; }, 1400);
+}
+
+function openDeleteModal() {
+  document.getElementById('deleteGuestName').textContent = document.getElementById('guestName').value || 'האורח';
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+}
+function confirmDelete() {
+  closeDeleteModal();
+  const toast = document.getElementById('toast');
+  toast.querySelector('span') && (toast.querySelector('div') || toast).childNodes[1] && null;
+  toast.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg> האורח נמחק';
+  toast.classList.add('show');
+  setTimeout(() => { location.href = 'screen7-guest-list.html'; }, 1400);
+}
+</script>
+</body>
+</html>

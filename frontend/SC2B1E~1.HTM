@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – ניהול אירוע</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right">
+        <div id="topbar-title"></div>
+      </div>
+      <div class="topbar-left" id="topbar-right">
+        <div class="topbar-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> חפש אורח...</div>
+        <div class="topbar-icon-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">ניהול אירוע</div>
+          <div class="page-subtitle">החתונה של נועה וגיא · 15 ספטמבר 2024 · "הגן הקסום"</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-secondary" onclick="location='screen12-export.html'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+            יצוא
+          </button>
+          <button class="btn btn-primary" onclick="location='screen9-seating-editor.html'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            עורך ישיבה
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid-4" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--blue-light)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1976D2" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+          </div>
+          <div><div class="stat-num" style="color:#1976D2">250</div><div class="stat-label">מוזמנים</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--green-light)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div><div class="stat-num" style="color:var(--green)">184</div><div class="stat-label">מאושרים</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--red-light)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          </div>
+          <div><div class="stat-num" style="color:var(--red)">26</div><div class="stat-label">ביטולים</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--orange-light)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div><div class="stat-num" style="color:var(--orange)">40</div><div class="stat-label">טרם השיבו</div></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px">
+        <!-- Seating CTA -->
+        <div class="card" style="background:var(--orange-light);border:1.5px solid var(--orange-mid);display:flex;align-items:center;gap:18px;cursor:pointer" onclick="location='screen9-seating-editor.html'">
+          <div style="width:52px;height:52px;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--orange-mid)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--orange)">עורך סידור ישיבה</div>
+            <div style="font-size:13px;color:var(--gray2)">נהל את השולחנות והשיבוצים</div>
+          </div>
+          <div style="margin-right:auto;font-size:22px;color:var(--orange)">←</div>
+        </div>
+        <!-- Auto Seating -->
+        <div class="card" style="background:var(--blue-light);border:1.5px solid #BBDEFB;display:flex;align-items:center;gap:18px">
+          <div style="width:52px;height:52px;background:white;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #BBDEFB">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1976D2" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700;color:#1565C0">שיבוץ אוטומטי זמין</div>
+            <div style="font-size:13px;color:#1976D2;margin-top:2px">40 אורחים ללא שיבוץ לשולחן</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="border-color:#1976D2;color:#1976D2">שבץ עכשיו</button>
+        </div>
+      </div>
+
+      <!-- Recent Activity Table -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <a href="screen7-guest-list.html" style="font-size:13px;color:var(--orange);text-decoration:none">צפה בכל האורחים →</a>
+          <div style="font-size:16px;font-weight:700">פעילות אחרונה</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th></th>
+              <th>שם</th>
+              <th>אורחים</th>
+              <th>זמן</th>
+              <th>סטטוס</th>
+            </tr></thead>
+            <tbody>
+              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
+                <td><div class="avatar avatar-md" style="background:#D1E8FF">👨</div></td>
+                <td style="font-weight:700">ישראל ישראלי</td>
+                <td>2</td>
+                <td style="color:var(--gray2)">לפני 5 דקות</td>
+                <td><span class="badge badge-green">אישר הגעה</span></td>
+              </tr>
+              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
+                <td><div class="avatar avatar-md" style="background:#E0E0E0">👩</div></td>
+                <td style="font-weight:700">מיכל אברהם</td>
+                <td>0</td>
+                <td style="color:var(--gray2)">לפני 20 דקות</td>
+                <td><span class="badge badge-red">ביטל</span></td>
+              </tr>
+              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
+                <td><div class="avatar avatar-md" style="background:#D0EED0">👨</div></td>
+                <td style="font-weight:700">דוד לוי</td>
+                <td>4</td>
+                <td style="color:var(--gray2)">לפני שעה</td>
+                <td><span class="badge badge-green">אישר הגעה</span></td>
+              </tr>
+              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
+                <td><div class="avatar avatar-md" style="background:#F3E5F5">👩</div></td>
+                <td style="font-weight:700">שרה מזרחי</td>
+                <td>2</td>
+                <td style="color:var(--gray2)">לפני 3 שעות</td>
+                <td><span class="badge badge-gray">טרם השיב</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="_shell.js"></script>
+<script>renderShell({ active:'dashboard', pageTitle:'ניהול אירוע' })</script>
+</body>
+</html>

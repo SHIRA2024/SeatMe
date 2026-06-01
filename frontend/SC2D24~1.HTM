@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – ייבוא אורחים</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
+.drop-zone { border:2.5px dashed var(--gray4);border-radius:var(--radius-lg);padding:52px 32px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--gray6); }
+.drop-zone:hover, .drop-zone.drag-over { border-color:var(--orange);background:var(--orange-light);transform:scale(1.005); }
+.drop-zone.has-file { border-style:solid;border-color:var(--green);background:var(--green-light); }
+.step-pill { display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:13px;font-weight:800;flex-shrink:0; }
+.step-pill.done { background:var(--green);color:white; }
+.step-pill.active { background:var(--orange);color:white; }
+.step-pill.pending { background:var(--gray4);color:var(--gray2); }
+.col-map-row { display:grid;grid-template-columns:1fr 24px 1fr;gap:10px;align-items:center;margin-bottom:10px; }
+.col-chip { background:var(--gray5);border:1px solid var(--gray4);border-radius:20px;padding:7px 14px;font-size:13px;font-weight:600;text-align:center; }
+.preview-table-wrap { overflow-x:auto;max-height:240px;overflow-y:auto; }
+.progress-bar-wrap { background:var(--gray4);border-radius:8px;height:10px;overflow:hidden;margin:10px 0; }
+.progress-bar-fill { background:var(--orange);height:100%;border-radius:8px;transition:width 0.3s; }
+.success-toast { position:fixed;bottom:28px;right:50%;transform:translateX(50%);background:#1C1C1C;color:white;padding:12px 24px;border-radius:var(--radius-lg);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:9999; }
+.success-toast.show { opacity:1; }
+.overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center; }
+.overlay.open { display:flex; }
+</style>
+</head>
+<body>
+
+<!-- Import Progress Overlay -->
+<div class="overlay" id="importOverlay">
+  <div style="background:white;border-radius:20px;padding:40px 48px;width:400px;text-align:center;box-shadow:var(--shadow-lg)">
+    <div style="font-size:36px;margin-bottom:16px">⬆️</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:6px">מייבא אורחים...</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="importProgress" style="width:0%"></div></div>
+    <div style="font-size:14px;color:var(--gray2);margin-top:10px" id="importStatus">מעבד שורה 0 מתוך 0</div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left" id="topbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">ביטול</button>
+        <button class="btn btn-primary btn-sm" id="importBtn" onclick="startImport()" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+          ייבא אורחים
+        </button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">← חזור לרשימה</button>
+          <div>
+            <div class="page-title">ייבוא אורחים מקובץ</div>
+            <div class="page-subtitle">טען קובץ Excel או CSV עם רשימת האורחים</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps indicator -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:28px;max-width:600px">
+        <div style="display:flex;align-items:center;gap:8px" id="step1-indicator">
+          <div class="step-pill active" id="pill1">1</div>
+          <div style="font-size:13px;font-weight:600" id="lbl1">העלה קובץ</div>
+        </div>
+        <div style="flex:1;height:2px;background:var(--gray4);margin:0 12px" id="line1"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="step-pill pending" id="pill2">2</div>
+          <div style="font-size:13px;font-weight:600;color:var(--gray3)" id="lbl2">מיפוי עמודות</div>
+        </div>
+        <div style="flex:1;height:2px;background:var(--gray4);margin:0 12px" id="line2"></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="step-pill pending" id="pill3">3</div>
+          <div style="font-size:13px;font-weight:600;color:var(--gray3)" id="lbl3">אישור ייבוא</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;max-width:1060px">
+        <div style="display:flex;flex-direction:column;gap:20px">
+
+          <!-- Step 1: Upload -->
+          <div class="card" id="step1">
+            <div class="section-title">שלב 1 – העלאת קובץ</div>
+            <div class="drop-zone" id="dropZone"
+              onclick="document.getElementById('fileInput').click()"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleDrop(event)">
+              <div id="dropContent">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray3)" stroke-width="1.5" style="margin-bottom:14px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:6px">גרור קובץ לכאן</div>
+                <div style="font-size:13px;color:var(--gray2);margin-bottom:16px">או לחץ לבחירת קובץ</div>
+                <span class="badge badge-gray">CSV</span>
+                <span class="badge badge-gray" style="margin-right:6px">XLSX</span>
+                <span class="badge badge-gray" style="margin-right:6px">XLS</span>
+              </div>
+              <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(this)">
+            </div>
+          </div>
+
+          <!-- Step 2: Column Mapping (hidden until file loaded) -->
+          <div class="card" id="step2" style="display:none">
+            <div class="section-title">שלב 2 – מיפוי עמודות</div>
+            <div style="font-size:13px;color:var(--gray2);margin-bottom:16px">התאם את עמודות הקובץ שלך לשדות של EventFlow</div>
+            <div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;margin-bottom:8px;padding:0 4px">
+              <div style="font-size:12px;font-weight:700;color:var(--gray3)">עמודה בקובץ</div>
+              <div></div>
+              <div style="font-size:12px;font-weight:700;color:var(--gray3)">שדה ב-EventFlow</div>
+            </div>
+            <div id="mappingRows">
+              <!-- injected by JS -->
+            </div>
+          </div>
+
+          <!-- Step 3: Preview Table (hidden until mapped) -->
+          <div class="card" id="step3" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="section-title" style="margin-bottom:0;border:none;padding:0">שלב 3 – תצוגה מקדימה</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge badge-green" id="validCount">8 שורות תקינות</span>
+                <span class="badge badge-red" id="errorCount" style="display:none">0 שגיאות</span>
+              </div>
+            </div>
+            <div class="preview-table-wrap">
+              <table id="previewTable">
+                <thead><tr id="previewHead"></tr></thead>
+                <tbody id="previewBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card" style="background:var(--blue-light);border-color:#BBDEFB">
+            <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:10px">📋 פורמט מומלץ</div>
+            <div style="font-size:13px;color:#1565C0;line-height:1.7">
+              הקובץ יכול להכיל את העמודות:<br>
+              <strong>שם</strong> (חובה)<br>
+              <strong>טלפון</strong> (חובה)<br>
+              <strong>אימייל</strong><br>
+              <strong>מספר אורחים</strong><br>
+              <strong>קבוצה / שייכות</strong><br>
+              <strong>מספר שולחן</strong><br>
+              <strong>הערות</strong>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px">הורד תבנית</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-secondary btn-full btn-sm" onclick="downloadTemplate('xlsx')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+                תבנית Excel (.xlsx)
+              </button>
+              <button class="btn btn-secondary btn-full btn-sm" onclick="downloadTemplate('csv')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+                תבנית CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px">אפשרויות ייבוא</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="radio" name="importMode" value="add" checked style="accent-color:var(--orange)">
+                הוסף לרשימה הקיימת
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
+                <input type="radio" name="importMode" value="replace" style="accent-color:var(--orange)">
+                החלף את הרשימה כולה
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;margin-top:4px">
+                <input type="checkbox" checked style="width:15px;height:15px;accent-color:var(--orange)">
+                דלג על כפולים אוטומטית
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+                <input type="checkbox" style="width:15px;height:15px;accent-color:var(--orange)">
+                שלח הזמנה אוטומטית
+              </label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-lg" id="importBtnSide" onclick="startImport()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
+            ייבא אורחים
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="success-toast" id="toast"></div>
+
+<script src="_shell.js"></script>
+<script>
+renderShell({ active:'import', pageTitle:'ייבוא אורחים' });
+
+const sampleData = [
+  ['שם','טלפון','נפשות','קבוצה','שולחן'],
+  ['משפחת כהן','054-1111111','4','משפחה של החתן','5'],
+  ['שרה לוי','052-2222222','2','משפחה של הכלה','2'],
+  ['דוד מזרחי','050-3333333','1','חברים',''],
+  ['נועם ורותי פרץ','053-4444444','3','עמיתים','7'],
+  ['ג\'ולי גרין','058-5555555','2','חברים של הכלה',''],
+  ['יעל שמיר','054-6666666','1','משפחה של הכלה','3'],
+  ['אבי ברק','052-7777777','4','משפחה של החתן','1'],
+  ['תמר רוזן','050-8888888','2','חברים',''],
+];
+
+const fields = ['שם','טלפון','אימייל','נפשות','קבוצה','שולחן','הערות','— לא לייבא —'];
+
+function handleFile(input) {
+  if (!input.files.length) return;
+  simulateFileLoad(input.files[0].name);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) simulateFileLoad(file.name);
+}
+
+function simulateFileLoad(filename) {
+  const dz = document.getElementById('dropZone');
+  dz.classList.add('has-file');
+  dz.innerHTML = `<div style="display:flex;align-items:center;gap:14px;justify-content:center">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="16 13 12 17 8 13"/><line x1="12" y1="17" x2="12" y2="11"/></svg>
+    <div style="text-align:right">
+      <div style="font-size:16px;font-weight:700;color:var(--dark)">${filename}</div>
+      <div style="font-size:13px;color:var(--green)">✓ ${sampleData.length-1} שורות זוהו</div>
+    </div>
+  </div>`;
+
+  // Set step 1 done, activate step 2
+  setStep(1, 'done'); setStep(2, 'active');
+  document.getElementById('line1').style.background = 'var(--green)';
+
+  // Build mapping UI
+  buildMapping();
+  document.getElementById('step2').style.display = 'block';
+  setTimeout(() => {
+    buildPreview();
+    document.getElementById('step3').style.display = 'block';
+    setStep(2, 'done'); setStep(3, 'active');
+    document.getElementById('line2').style.background = 'var(--green)';
+    document.getElementById('importBtn').disabled = false;
+    document.getElementById('importBtnSide').disabled = false;
+  }, 600);
+}
+
+function setStep(n, state) {
+  const pill = document.getElementById('pill'+n);
+  const lbl  = document.getElementById('lbl'+n);
+  pill.className = 'step-pill ' + state;
+  if (state==='done') { pill.innerHTML='✓'; lbl.style.color='var(--green)'; }
+  else if (state==='active') { pill.innerHTML=n; lbl.style.color='var(--orange)'; }
+}
+
+function buildMapping() {
+  const headers = sampleData[0];
+  const html = headers.map((h, i) => `
+    <div class="col-map-row">
+      <div class="col-chip">${h}</div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray3)" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      <select class="input" style="padding:7px 12px">
+        ${fields.map(f => `<option ${f===h?'selected':''}>${f}</option>`).join('')}
+      </select>
+    </div>`).join('');
+  document.getElementById('mappingRows').innerHTML = html;
+}
+
+function buildPreview() {
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  head.innerHTML = sampleData[0].map(h=>`<th>${h}</th>`).join('');
+  body.innerHTML = sampleData.slice(1).map((row,i)=>`
+    <tr>
+      ${row.map(cell=>`<td>${cell||'<span style="color:var(--gray3)">—</span>'}</td>`).join('')}
+    </tr>`).join('');
+  document.getElementById('validCount').textContent = (sampleData.length-1) + ' שורות תקינות';
+}
+
+function startImport() {
+  const total = sampleData.length - 1;
+  document.getElementById('importOverlay').classList.add('open');
+  let done = 0;
+  const t = setInterval(() => {
+    done++;
+    const pct = Math.round(done/total*100);
+    document.getElementById('importProgress').style.width = pct + '%';
+    document.getElementById('importStatus').textContent = `מעבד שורה ${done} מתוך ${total}`;
+    if (done >= total) {
+      clearInterval(t);
+      setTimeout(() => {
+        document.getElementById('importOverlay').classList.remove('open');
+        showToast(`✓ ${total} אורחים יובאו בהצלחה!`);
+        setTimeout(() => location.href = 'screen7-guest-list.html', 1600);
+      }, 500);
+    }
+  }, 300);
+}
+
+function downloadTemplate(type) { showToast(`תבנית .${type} הורדה`); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

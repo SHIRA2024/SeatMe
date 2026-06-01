@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – תצוגה מקדימה לאורח</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--orange-light);border:1px solid var(--orange-mid);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--orange)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          מצב תצוגה מקדימה
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="history.back()">יציאה</button>
+      </div>
+    </header>
+    <main class="page-content" style="max-width:900px;margin:0 auto">
+      <!-- Preview Banner -->
+      <div style="background:var(--orange-light);border:1.5px solid var(--orange-mid);border-radius:var(--radius-lg);padding:12px 20px;margin-bottom:24px;font-size:13px;color:var(--gray1);display:flex;align-items:center;gap:10px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        מצב תצוגה מקדימה – כך האורח יראה את המידע. שינויים לא ישמרו.
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <!-- Left: Guest info -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Greeting Card -->
+          <div class="card" style="text-align:center;padding:28px">
+            <div style="width:72px;height:72px;border-radius:50%;background:#E0E0E0;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 14px">👨</div>
+            <h2 style="font-size:24px;font-weight:800">,היי ישראל ישראלי</h2>
+            <p style="font-size:14px;color:var(--gray2);margin-top:6px;line-height:1.6">אנחנו מחכים לראותך! הנה פרטי הישיבה ששיירנו עבורך באירוע.</p>
+          </div>
+
+          <!-- Ticket Card -->
+          <div style="border:3px solid var(--orange);border-radius:var(--radius-lg);overflow:hidden">
+            <div style="background:var(--orange-light);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+              <span class="badge badge-green">מאושר</span>
+              <div>
+                <div style="font-size:13px;color:var(--gray2)">הכיסא שלך</div>
+                <div style="font-size:16px;font-weight:700">ישראל ישראלי</div>
+              </div>
+              <div style="width:40px;height:40px;background:var(--orange-light);border-radius:10px;border:1px solid var(--orange-mid);display:flex;align-items:center;justify-content:center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
+              </div>
+            </div>
+            <div style="background:white;padding:24px;text-align:center">
+              <div style="font-size:13px;color:var(--gray2)">שולחן</div>
+              <div style="font-size:64px;font-weight:900;color:var(--orange);line-height:1">12</div>
+            </div>
+          </div>
+
+          <!-- Important info -->
+          <div style="background:var(--blue-light);border:1.5px solid #BBDEFB;border-radius:var(--radius-lg);padding:16px 20px;display:flex;gap:12px">
+            <div style="width:28px;height:28px;border-radius:50%;background:white;border:1.5px solid #BBDEFB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1565C0" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:#1565C0;margin-bottom:4px">מידע חשוב</div>
+              <div style="font-size:13px;color:#1565C0;line-height:1.6">הכניסה לאולם תתאפשר מהשעה 19:30. נא להציג QR בקבלת האישור.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Map -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <span style="font-size:13px;color:var(--orange);cursor:pointer">הגדל מפה</span>
+              <div style="font-weight:700;display:flex;align-items:center;gap:6px">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1C1C" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                מיקום השולחן במפה
+              </div>
+            </div>
+            <div style="border-radius:var(--radius);overflow:hidden">
+              <svg width="100%" viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg">
+                <rect width="400" height="260" fill="#E8E0D0"/>
+                <circle cx="50" cy="70" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="120" cy="70" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="190" cy="70" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="260" cy="70" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="330" cy="70" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="50" cy="170" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="120" cy="170" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="190" cy="170" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="260" cy="170" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="330" cy="170" r="26" fill="#D4C8B8" stroke="#C0B5A5" stroke-width="1.5"/>
+                <circle cx="390" cy="170" r="30" fill="#E8913A" opacity="0.9"/>
+                <text x="390" y="175" text-anchor="middle" font-size="13" font-weight="bold" fill="white">12</text>
+                <rect x="338" y="130" width="80" height="18" rx="5" fill="white" opacity="0.95"/>
+                <text x="378" y="143" text-anchor="middle" font-size="10" fill="#E8913A" font-weight="bold">השולחן שלך</text>
+                <rect x="0" y="240" width="400" height="20" fill="rgba(0,0,0,0.12)"/>
+                <text x="200" y="254" text-anchor="middle" font-size="10" fill="white">← כניסה ראשית</text>
+              </svg>
+            </div>
+            <div style="background:rgba(0,0,0,0.05);border-radius:var(--radius-sm);padding:8px 12px;margin-top:10px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray2)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
+              אזור הקבלה – צד ימין
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            שלח בקשת החלפה / הסבה
+          </button>
+          <p style="font-size:11px;color:var(--gray3);text-align:center">*הבקשה תישלח למארחי האירוע</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="_shell.js"></script>
+<script>renderShell({ active:'preview', pageTitle:'תצוגה מקדימה לאורח' })</script>
+</body>
+</html>

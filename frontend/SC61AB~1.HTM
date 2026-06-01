@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=1200">
+<title>EventFlow – ניהול שולחנות</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
+.table-card { border:1.5px solid var(--gray4);border-radius:var(--radius-lg);padding:18px 20px;background:white;transition:box-shadow 0.15s,border-color 0.15s;position:relative; }
+.table-card:hover { box-shadow:var(--shadow);border-color:var(--gray3); }
+.table-card.is-vip { border-color:var(--orange);background:var(--orange-light); }
+.table-capacity-bar { height:6px;border-radius:4px;background:var(--gray4);margin-top:8px;overflow:hidden; }
+.table-capacity-fill { height:100%;border-radius:4px;background:var(--orange);transition:width 0.3s; }
+.table-actions { display:flex;gap:6px;opacity:0;transition:opacity 0.15s;position:absolute;top:14px;left:14px; }
+.table-card:hover .table-actions { opacity:1; }
+/* Add/Edit Modal */
+.modal-bg { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:none;align-items:center;justify-content:center; }
+.modal-bg.open { display:flex; }
+.modal-box { background:white;border-radius:20px;padding:32px 36px;width:500px;box-shadow:var(--shadow-lg);animation:popIn 0.22s ease; }
+@keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
+.success-toast { position:fixed;bottom:28px;right:50%;transform:translateX(50%);background:#1C1C1C;color:white;padding:12px 24px;border-radius:var(--radius-lg);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:9999; }
+.success-toast.show { opacity:1; }
+.type-btn { border:1.5px solid var(--gray4);border-radius:var(--radius);padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;background:white;text-align:center;transition:all 0.15s;font-family:inherit; }
+.type-btn:hover { border-color:var(--orange); }
+.type-btn.selected { border-color:var(--orange);background:var(--orange-light);color:var(--orange); }
+</style>
+</head>
+<body>
+
+<!-- Add/Edit Table Modal -->
+<div class="modal-bg" id="tableModal">
+  <div class="modal-box">
+    <div style="font-size:19px;font-weight:800;margin-bottom:20px" id="modalTitle">הוסף שולחן</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="grid-2" style="gap:14px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">מספר שולחן *</label>
+          <input class="input" id="tNum" type="number" placeholder="1">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">שם / תיאור</label>
+          <input class="input" id="tName" type="text" placeholder="לדוגמה: שולחן חתן-כלה">
+        </div>
+      </div>
+      <div class="grid-2" style="gap:14px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">קיבולת מקסימלית *</label>
+          <input class="input" id="tCapacity" type="number" placeholder="10" value="10">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">מגזר / אזור</label>
+          <select class="input" id="tZone">
+            <option>מרכז האולם</option>
+            <option>ליד הבמה</option>
+            <option>VIP</option>
+            <option>כניסה</option>
+            <option>גן חיצוני</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">סוג שולחן</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <button class="type-btn selected" onclick="selectType(this)">⭕ עגול</button>
+          <button class="type-btn" onclick="selectType(this)">⬜ מרובע</button>
+          <button class="type-btn" onclick="selectType(this)">➖ ארוך</button>
+          <button class="type-btn" onclick="selectType(this)">⭐ VIP</button>
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="tVip" style="width:16px;height:16px;accent-color:var(--orange)">
+        סמן כשולחן VIP
+      </label>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+        <button class="btn btn-secondary" onclick="closeModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveTable()">שמור שולחן</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="app-sidebar"></aside>
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-right"><div id="topbar-title"></div></div>
+      <div class="topbar-left" id="topbar-right">
+        <button class="btn btn-secondary btn-sm" onclick="autoGenerate()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          יצור אוטומטי
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוסף שולחן
+        </button>
+      </div>
+    </header>
+    <main class="page-content">
+      <div class="page-header">
+        <div>
+          <div class="page-title">ניהול שולחנות</div>
+          <div class="page-subtitle">הגדר את מספר השולחנות, הקיבולת והסוג</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--orange)" id="totalTables">12</div>
+            <div style="font-size:12px;color:var(--gray2)">שולחנות</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--gray4)"></div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--green)" id="totalCapacity">120</div>
+            <div style="font-size:12px;color:var(--gray2)">מקומות ישיבה</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--gray4)"></div>
+          <div style="text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--blue)">184</div>
+            <div style="font-size:12px;color:var(--gray2)">אורחים משובצים</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:24px">
+
+        <!-- Tables Grid -->
+        <div>
+          <!-- Bulk actions -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-secondary btn-sm" onclick="location='screen9-seating-editor.html'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                עורך ישיבה
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="confirm('לאפס את כל השיבוצים?')">אפס שיבוצים</button>
+            </div>
+            <div style="font-size:13px;color:var(--gray2)" id="tableCountLabel">מציג 12 שולחנות</div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px" id="tablesGrid">
+            <!-- Injected by JS -->
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <!-- Capacity chart -->
+          <div class="card">
+            <div class="section-title">ניצולת קיבולת</div>
+            <div style="display:flex;flex-direction:column;gap:10px" id="capacityList">
+            </div>
+          </div>
+
+          <!-- Auto Generate -->
+          <div class="card" style="background:var(--blue-light);border-color:#BBDEFB">
+            <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">⚡ יצירה אוטומטית</div>
+            <div style="font-size:13px;color:#1565C0;margin-bottom:12px;line-height:1.6">
+              על פי הגדרות האירוע (250 אורחים, 10 לשולחן) EventFlow ממליץ על <strong>25 שולחנות</strong>
+            </div>
+            <button class="btn btn-secondary btn-full btn-sm" style="border-color:#1976D2;color:#1565C0" onclick="autoGenerate()">
+              צור 25 שולחנות אוטומטית
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="section-title">סוגי שולחנות</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+              <div style="display:flex;justify-content:space-between"><span>⭕ עגולים</span><span style="font-weight:700">8</span></div>
+              <div style="display:flex;justify-content:space-between"><span>⬜ מרובעים</span><span style="font-weight:700">2</span></div>
+              <div style="display:flex;justify-content:space-between"><span>➖ ארוכים</span><span style="font-weight:700">1</span></div>
+              <div style="display:flex;justify-content:space-between"><span>⭐ VIP</span><span style="font-weight:700;color:var(--orange)">1</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="success-toast" id="toast"></div>
+
+<script src="_shell.js"></script>
+<script>
+renderShell({ active:'tables', pageTitle:'ניהול שולחנות' });
+
+const tables = [
+  { num:1,  name:'חתן וכלה', cap:12, assigned:12, vip:true,  zone:'ליד הבמה' },
+  { num:2,  name:'משפחה גרעינית', cap:10, assigned:8,  vip:false, zone:'מרכז האולם' },
+  { num:3,  name:'משפחה מורחבת', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
+  { num:4,  name:'חברים קרובים', cap:10, assigned:9,  vip:false, zone:'מרכז האולם' },
+  { num:5,  name:'עמיתים לעבודה', cap:10, assigned:7, vip:false, zone:'מרכז האולם' },
+  { num:6,  name:'', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
+  { num:7,  name:'', cap:10, assigned:6,  vip:false, zone:'מרכז האולם' },
+  { num:8,  name:'', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
+  { num:9,  name:'', cap:8,  assigned:5,  vip:false, zone:'כניסה' },
+  { num:10, name:'', cap:8,  assigned:8,  vip:false, zone:'כניסה' },
+  { num:11, name:'', cap:8,  assigned:4,  vip:false, zone:'גן חיצוני' },
+  { num:12, name:'', cap:10, assigned:3,  vip:false, zone:'גן חיצוני' },
+];
+
+function renderTables() {
+  const g = document.getElementById('tablesGrid');
+  g.innerHTML = tables.map((t, i) => {
+    const pct = Math.round(t.assigned / t.cap * 100);
+    const color = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--blue)';
+    return `
+    <div class="table-card${t.vip?' is-vip':''}">
+      <div class="table-actions">
+        <button class="btn btn-secondary btn-sm" onclick="editTable(${i})" style="padding:4px 8px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTable(${i})" style="padding:4px 8px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:24px;font-weight:900;color:${t.vip?'var(--orange)':'var(--dark)'}">${t.num}</div>
+          <div style="font-size:12px;color:var(--gray2);margin-top:1px">${t.name||'שולחן '+t.num}</div>
+        </div>
+        ${t.vip?'<span class="badge badge-orange" style="font-size:11px">VIP</span>':''}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+        <span style="font-size:13px;color:var(--gray2)">${t.assigned}/${t.cap} אורחים</span>
+        <span style="font-size:12px;font-weight:700;color:${color}">${pct}%</span>
+      </div>
+      <div class="table-capacity-bar">
+        <div class="table-capacity-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div style="font-size:11px;color:var(--gray3);margin-top:6px">${t.zone}</div>
+    </div>`;
+  }).join('');
+
+  // Capacity sidebar list
+  document.getElementById('capacityList').innerHTML = tables.slice(0,6).map(t => {
+    const pct = Math.round(t.assigned/t.cap*100);
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;font-weight:700;width:24px;color:var(--dark)">${t.num}</span>
+      <div style="flex:1"><div class="table-capacity-bar" style="margin:0"><div class="table-capacity-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'var(--orange)':'var(--blue)'}"></div></div></div>
+      <span style="font-size:12px;color:var(--gray2);width:32px;text-align:left">${pct}%</span>
+    </div>`;
+  }).join('') + `<div style="font-size:12px;color:var(--orange);text-align:center;margin-top:4px;cursor:pointer">+ עוד 6 שולחנות</div>`;
+
+  document.getElementById('totalTables').textContent = tables.length;
+  document.getElementById('totalCapacity').textContent = tables.reduce((s,t)=>s+t.cap,0);
+  document.getElementById('tableCountLabel').textContent = 'מציג ' + tables.length + ' שולחנות';
+}
+
+function openModal(mode='add') {
+  document.getElementById('modalTitle').textContent = mode==='add' ? 'הוסף שולחן' : 'ערוך שולחן';
+  if (mode==='add') { document.getElementById('tNum').value=''; document.getElementById('tName').value=''; document.getElementById('tCapacity').value=10; }
+  document.getElementById('tableModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('tableModal').classList.remove('open'); }
+
+function editTable(i) { openModal('edit'); document.getElementById('tNum').value=tables[i].num; document.getElementById('tName').value=tables[i].name; document.getElementById('tCapacity').value=tables[i].cap; }
+
+function deleteTable(i) {
+  if (confirm(`למחוק את שולחן ${tables[i].num}?`)) {
+    tables.splice(i, 1);
+    renderTables();
+    showToast('השולחן נמחק');
+  }
+}
+
+function saveTable() {
+  const num = parseInt(document.getElementById('tNum').value);
+  const name = document.getElementById('tName').value;
+  const cap = parseInt(document.getElementById('tCapacity').value) || 10;
+  if (!num) return;
+  tables.push({ num, name, cap, assigned:0, vip:document.getElementById('tVip').checked, zone:document.getElementById('tZone').value });
+  tables.sort((a,b)=>a.num-b.num);
+  closeModal();
+  renderTables();
+  showToast('שולחן ' + num + ' נוסף');
+}
+
+function autoGenerate() {
+  if (!confirm('יצור 25 שולחנות אוטומטית? פעולה זו תחליף את הרשימה הנוכחית.')) return;
+  tables.length = 0;
+  for (let i=1;i<=25;i++) tables.push({num:i,name:'',cap:10,assigned:Math.floor(Math.random()*11),vip:i===1,zone:i<=3?'ליד הבמה':i<=15?'מרכז האולם':'גן חיצוני'});
+  renderTables();
+  showToast('25 שולחנות נוצרו בהצלחה ✓');
+}
+
+function selectType(btn) {
+  btn.closest('div').querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+renderTables();
+</script>
+</body>
+</html>
