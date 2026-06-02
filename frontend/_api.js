@@ -83,6 +83,11 @@ async function saveSettings() {
   }
 }
 
+/** Register screen – handleRegister() – calls add_host Lambda (POST /hosts) */
+async function registerHost({ name, email, event_name, event_date, event_location }) {
+  return apiPost('/hosts', { name, email, event_name, event_date, event_location });
+}
+
 /** Login screen – handleLogin() */
 async function handleLogin(e) {
   e?.preventDefault();
