@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – עריכת אישור הגעה</title>
+<title>SeatMe – עריכת אישור הגעה</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 body { background:var(--gray5); display:flex; justify-content:center; padding:40px 20px; }
@@ -18,9 +18,9 @@ body { background:var(--gray5); display:flex; justify-content:center; padding:40
 <body>
 <div class="guest-shell">
   <nav class="guest-topnav">
-    <div class="logo"><div class="logo-icon">⚡</div>EventFlow</div>
+    <div class="logo"><div class="logo-icon">⚡</div>SeatMe</div>
     <div style="display:flex;gap:8px">
-      <a href="screen1-event-details.html" class="btn btn-secondary btn-sm">← פרטי האירוע</a>
+      <a href="SCREEN~1.HTM" class="btn btn-secondary btn-sm">← פרטי האירוע</a>
     </div>
   </nav>
 
@@ -49,8 +49,8 @@ body { background:var(--gray5); display:flex; justify-content:center; padding:40
             ?האם תגיעו
           </div>
           <div style="display:flex;gap:12px">
-            <div class="toggle-btn">לצערי לא</div>
-            <div class="toggle-btn active">!בטח שנגיע</div>
+            <div class="toggle-btn" id="btnNo" onclick="toggleRSVP('no')">לצערי לא</div>
+            <div class="toggle-btn active" id="btnYes" onclick="toggleRSVP('yes')">!בטח שנגיע</div>
           </div>
         </div>
 
@@ -61,7 +61,7 @@ body { background:var(--gray5); display:flex; justify-content:center; padding:40
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1C1C1C" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             (כמה תהיו? (כולל אתכם
           </label>
-          <input class="input" type="text" placeholder="מספר אורחים">
+          <input class="input" id="guestCountDisplay" type="number" placeholder="מספר אורחים" min="1" max="20">
           <p class="form-hint">ניתן להוסיף שמות אורחים נוספים בהערות.</p>
         </div>
 
@@ -72,13 +72,13 @@ body { background:var(--gray5); display:flex; justify-content:center; padding:40
             <span style="color:var(--orange)">♪</span>
             יש לכם שיר שחובה להשמיע?
           </label>
-          <textarea class="input" rows="3" style="resize:vertical">Bohemian Rhapsody - Queen</textarea>
+          <textarea class="input" id="songRequest" rows="3" style="resize:vertical">Bohemian Rhapsody - Queen</textarea>
         </div>
       </div>
 
       <div style="display:flex;gap:12px">
-        <button class="btn btn-primary btn-lg" style="flex:1">עדכן פרטים</button>
-        <button class="btn btn-danger">
+        <button class="btn btn-primary btn-lg" style="flex:1" onclick="submitRSVP()">עדכן פרטים</button>
+        <button class="btn btn-danger" onclick="cancelRSVP()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
           בטל אישור הגעה
         </button>
@@ -102,5 +102,19 @@ body { background:var(--gray5); display:flex; justify-content:center; padding:40
     </div>
   </div>
 </div>
+<script>
+function toggleRSVP(val) {
+  document.getElementById('btnYes').classList.toggle('active', val === 'yes');
+  document.getElementById('btnNo').classList.toggle('active',  val === 'no');
+}
+async function cancelRSVP() {
+  if (!confirm('לבטל את אישור ההגעה?')) return;
+  const params     = new URLSearchParams(location.search);
+  const host_email  = params.get('host')  || '';
+  const guest_email = params.get('guest') || '';
+  await apiPost('/guests/rsvp', { host_email, guest_email, rsvp: 'no', count: 0, song: '' });
+  location.href = 'SCREEN~3.HTM?guest=' + encodeURIComponent(guest_email);
+}
+</script>
 </body>
 </html>

@@ -11,86 +11,74 @@ def lambda_handler(event, context):
     try:
         body = json.loads(event.get('body') or '{}')
     except (json.JSONDecodeError, TypeError):
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Invalid JSON body'})
-        }
+        return {'statusCode': 400, 'body': json.dumps({'message': 'Invalid JSON body'})}
 
-    required = ['host_email', 'guest_email']
-    missing = [f for f in required if not body.get(f)]
+    missing = [f for f in ['host_email', 'guest_email'] if not body.get(f)]
     if missing:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': f'Missing required fields: {", ".join(missing)}'})
-        }
+        return {'statusCode': 400, 'body': json.dumps({'message': f'Missing required fields: {", ".join(missing)}'})}
 
-    host_email = body['host_email'].strip()
+    host_email  = body['host_email'].strip()
     guest_email = body['guest_email'].strip()
-    name = body.get('name')
-    guest_table = body.get('table')
-    category = body.get('category')
-    count = body.get('count')
-
-    if count is not None and (not isinstance(count, int) or count < 1):
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'count must be a positive integer'})
-        }
 
     for addr in [host_email, guest_email]:
         if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', addr):
-            return {
-                'statusCode': 400,
-                'body': json.dumps({'message': f'Invalid email format: {addr}'})
-            }
+            return {'statusCode': 400, 'body': json.dumps({'message': f'Invalid email format: {addr}'})}
 
-    update_parts = []
-    attr_names = {'#gid': guest_email}
-    attr_values = {}
+    count = body.get('count')
+    if count is not None and (not isinstance(count, int) or count < 1):
+        return {'statusCode': 400, 'body': json.dumps({'message': 'count must be a positive integer'})}
 
-    if name is not None:
-        update_parts.append('guests.#gid.#n = :n')
-        attr_names['#n'] = 'name'
-        attr_values[':n'] = name
+    set_parts    = []
+    remove_parts = []
+    attr_names   = {'#gid': guest_email}
+    attr_values  = {}
 
-    if guest_table is not None:
-        update_parts.append('guests.#gid.#t = :t')
-        attr_names['#t'] = 'table'
-        attr_values[':t'] = guest_table
+    # Simple scalar fields – only update if key exists in body
+    for field, alias, val_key, attr in [
+        ('name',     '#n',  ':n',  'name'),
+        ('category', '#c',  ':c',  'category'),
+        ('rsvp',     '#r',  ':r',  'rsvp'),
+    ]:
+        if field in body and body[field] is not None:
+            set_parts.append(f'guests.#gid.{alias} = {val_key}')
+            attr_names[alias] = attr
+            attr_values[val_key] = body[field]
 
-    if category is not None:
-        update_parts.append('guests.#gid.#c = :c')
-        attr_names['#c'] = 'category'
-        attr_values[':c'] = category
-
+    # count (validated above)
     if count is not None:
-        update_parts.append('guests.#gid.#cnt = :cnt')
+        set_parts.append('guests.#gid.#cnt = :cnt')
         attr_names['#cnt'] = 'count'
         attr_values[':cnt'] = count
 
-    if not update_parts:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'No fields to update'})
-        }
+    # table: null → REMOVE (clear assignment), value → SET
+    if 'table' in body:
+        attr_names['#t'] = 'table'
+        if body['table'] is None:
+            remove_parts.append('guests.#gid.#t')
+        else:
+            set_parts.append('guests.#gid.#t = :t')
+            attr_values[':t'] = body['table']
+
+    if not set_parts and not remove_parts:
+        return {'statusCode': 400, 'body': json.dumps({'message': 'No fields to update'})}
+
+    expr = ('SET ' + ', '.join(set_parts) if set_parts else '') + \
+           ((' ' if set_parts else '') + 'REMOVE ' + ', '.join(remove_parts) if remove_parts else '')
+
+    kwargs = dict(
+        Key={'email': host_email},
+        UpdateExpression=expr,
+        ExpressionAttributeNames=attr_names,
+        ConditionExpression='attribute_exists(guests.#gid)',
+    )
+    if attr_values:
+        kwargs['ExpressionAttributeValues'] = attr_values
 
     try:
-        table.update_item(
-            Key={'email': host_email},
-            UpdateExpression='SET ' + ', '.join(update_parts),
-            ExpressionAttributeNames=attr_names,
-            ExpressionAttributeValues=attr_values,
-            ConditionExpression='attribute_exists(guests.#gid)'
-        )
+        table.update_item(**kwargs)
     except ClientError as e:
         if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
-            return {
-                'statusCode': 404,
-                'body': json.dumps({'message': 'Host or guest not found'})
-            }
+            return {'statusCode': 404, 'body': json.dumps({'message': 'Host or guest not found'})}
         raise
 
-    return {
-        'statusCode': 200,
-        'body': json.dumps({'message': 'Guest updated', 'guest_email': guest_email})
-    }
+    return {'statusCode': 200, 'body': json.dumps({'message': 'Guest updated', 'guest_email': guest_email})}

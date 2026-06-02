@@ -2,133 +2,493 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – עורך סידור ישיבה</title>
+<title>SeatMe – עורך סידור ישיבה</title>
 <link rel="stylesheet" href="shared.css">
 <style>
-.toolbar-btn { display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 16px;background:white;border:1.5px solid var(--gray4);border-radius:var(--radius);cursor:pointer;font-size:12px;font-weight:600;color:var(--dark);transition:all 0.15s;min-width:80px }
-.toolbar-btn:hover { border-color:var(--orange);color:var(--orange);background:var(--orange-light) }
-.table-circle { width:130px;height:130px;border-radius:50%;border:2px solid var(--gray4);background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow-sm) }
-.table-circle:hover { border-color:var(--orange);transform:scale(1.04) }
+.table-circle {
+  width:120px;height:120px;border-radius:50%;
+  border:2.5px solid var(--gray4);background:white;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.18s;box-shadow:0 2px 8px rgba(0,0,0,0.07);
+  position:relative; user-select:none;
+}
+.table-circle:hover { border-color:var(--orange);transform:scale(1.05) }
 .table-circle.selected { border:3px solid var(--orange);background:var(--orange-light) }
-.table-circle .t-cap { font-size:12px;color:var(--gray2);margin-top:4px;background:var(--gray5);padding:2px 10px;border-radius:10px }
-.table-circle.selected .t-cap { background:white;color:var(--orange) }
-.panel-tab { padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray2);border-bottom:2px solid transparent }
+.table-circle.full { border-color:var(--green);background:var(--green-light) }
+.table-circle.drag-over { border:3px dashed var(--blue);background:var(--blue-light);transform:scale(1.08) }
+.table-circle.dragging { opacity:0.4 }
+.t-num { font-size:26px;font-weight:900;color:var(--dark);line-height:1 }
+.t-label { font-size:10px;color:var(--gray3);margin-bottom:2px }
+.t-cap { font-size:11px;color:var(--gray2);background:var(--gray5);padding:2px 8px;border-radius:10px;margin-top:4px }
+.table-circle.selected .t-cap { background:white;color:var(--orange);font-weight:700 }
+.table-circle.full .t-cap { background:white;color:var(--green);font-weight:700 }
+
+.add-table-btn {
+  width:120px;height:120px;border-radius:50%;
+  border:2.5px dashed var(--gray4);background:var(--gray5);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.18s;color:var(--gray3);font-size:13px;font-weight:600;gap:6px;
+}
+.add-table-btn:hover { border-color:var(--orange);background:var(--orange-light);color:var(--orange) }
+
+.panel-tab { padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray2);border-bottom:2.5px solid transparent;flex:1;text-align:center;transition:all 0.15s }
 .panel-tab.active { color:var(--orange);border-color:var(--orange) }
-.unassigned-row { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);cursor:pointer;transition:background 0.1s }
-.unassigned-row:hover { background:var(--gray5) }
+
+.guest-row { display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--radius-sm);cursor:grab;transition:background 0.1s }
+.guest-row:hover { background:var(--gray5) }
+.guest-row.dragging-guest { opacity:0.4;cursor:grabbing }
+
+.saving-indicator { position:fixed;bottom:24px;left:24px;background:#1C1C1C;color:white;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;opacity:0;transition:opacity 0.3s;z-index:999 }
+.saving-indicator.show { opacity:1 }
+
+/* Add table modal */
+.modal-bg { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:none;align-items:center;justify-content:center }
+.modal-bg.open { display:flex }
+.modal-box { background:white;border-radius:20px;padding:28px 32px;width:420px;box-shadow:0 16px 48px rgba(0,0,0,0.2);animation:popIn 0.22s ease }
+@keyframes popIn { from{transform:scale(0.85);opacity:0} to{transform:scale(1);opacity:1} }
 </style>
 </head>
 <body>
+<!-- Add Table Modal -->
+<div class="modal-bg" id="addTableModal">
+  <div class="modal-box">
+    <div style="font-size:18px;font-weight:800;margin-bottom:20px">הוסף שולחן</div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">מספר שולחן *</label>
+          <input class="input" id="newTableNum" type="number" placeholder="1" min="1">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">קיבולת *</label>
+          <input class="input" id="newTableCap" type="number" placeholder="10" value="10" min="1">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">שם / תיאור (אופציונלי)</label>
+        <input class="input" id="newTableName" type="text" placeholder="לדוגמה: שולחן חתן-כלה">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:6px">
+        <button class="btn btn-secondary" onclick="closeAddTableModal()">ביטול</button>
+        <button class="btn btn-primary" onclick="saveNewTable()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוסף שולחן
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="app-shell">
   <aside class="sidebar" id="app-sidebar"></aside>
   <div class="main-area">
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left">
-        <button class="btn btn-secondary btn-sm">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/></svg>
-          שמור
+        <button class="btn btn-primary btn-sm" onclick="openAddTableModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          הוסף שולחן
         </button>
-        <button class="btn btn-secondary btn-sm">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
-          יצוא
+        <button class="btn btn-secondary btn-sm" onclick="runAutoSeating()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          שיוך אוטומטי
         </button>
       </div>
     </header>
     <main class="page-content">
-      <!-- Toolbar -->
-      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-        <div class="toolbar-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>הגדרות מפה</div>
-        <div class="toolbar-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/></svg>שיוך אוטומטי</div>
-        <div class="toolbar-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>שולחן מרובע</div>
-        <div class="toolbar-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>שולחן עגול</div>
-        <div style="margin-right:auto;display:flex;gap:8px;align-items:center">
-          <span style="font-size:13px;color:var(--gray2)">שולחנות:</span>
-          <span class="badge badge-orange">8 מלאים</span>
-          <span class="badge badge-gray">4 פנויים</span>
-        </div>
+
+      <!-- Stats bar -->
+      <div style="display:flex;gap:16px;margin-bottom:18px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:700;color:var(--dark)" id="statsLabel">טוען...</span>
+        <span class="badge badge-green" id="badgeFull">0 מלאים</span>
+        <span class="badge badge-orange" id="badgePartial">0 חלקיים</span>
+        <span class="badge badge-gray" id="badgeEmpty">0 ריקים</span>
+        <span style="margin-right:auto;font-size:13px;color:var(--gray2)" id="unassignedLabel"></span>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
         <!-- Tables Canvas -->
-        <div class="card" style="padding:24px">
-          <div class="grid-4" style="gap:24px;justify-items:center">
-            <div class="table-circle selected">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900;color:var(--dark)">8</div>
-              <div class="t-cap">12/12</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">7</div>
-              <div class="t-cap">8/10</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">10</div>
-              <div class="t-cap">0/8</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">9</div>
-              <div class="t-cap">4/10</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">5</div>
-              <div class="t-cap">10/10</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">6</div>
-              <div class="t-cap">6/10</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">3</div>
-              <div class="t-cap">4/12</div>
-            </div>
-            <div class="table-circle">
-              <div style="font-size:11px;color:var(--gray2)">שולחן</div>
-              <div style="font-size:28px;font-weight:900">4</div>
-              <div class="t-cap">0/8</div>
-            </div>
+        <div class="card" style="padding:24px;min-height:400px">
+          <div id="tablesGrid" style="display:flex;flex-wrap:wrap;gap:20px;justify-content:center">
+            <div style="color:var(--gray3);padding:40px;text-align:center">טוען שולחנות...</div>
           </div>
-          <div style="text-align:center;margin-top:20px">
-            <button class="btn btn-secondary btn-sm">גרור אורחים מהרשימה לשולחנות</button>
+          <div style="text-align:center;margin-top:20px" id="noTablesMsg" style="display:none">
+            <p style="color:var(--gray2)">אין שולחנות מוגדרים.</p>
+            <button class="btn btn-primary btn-sm" onclick="location='SC61AB~1.HTM'">הוסף שולחנות</button>
           </div>
         </div>
 
         <!-- Side Panel -->
-        <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
-          <div style="display:flex;border-bottom:1px solid var(--gray4)">
-            <div class="panel-tab active" style="flex:1;text-align:center">
-              <span style="background:var(--orange);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px">4</span>
-              ללא שיוך
+        <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:600px">
+          <div style="display:flex;border-bottom:1px solid var(--gray4)" id="panelTabs">
+            <div class="panel-tab active" id="tabUnassigned" onclick="switchTab('unassigned')">
+              ללא שיוך <span id="unassignedCount" class="badge badge-orange" style="margin-right:4px">0</span>
             </div>
-            <div class="panel-tab" style="flex:1;text-align:center">שולחן 8 (3)</div>
-          </div>
-          <div style="padding:12px">
-            <div class="input-search">
-              <input class="input" style="font-size:13px;padding:8px 12px 8px 36px" type="text" placeholder="...חפש אורח">
-              <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <div class="panel-tab" id="tabTable" onclick="switchTab('table')">
+              <span id="selectedTableLabel">בחר שולחן</span>
             </div>
           </div>
-          <div style="flex:1;overflow-y:auto">
-            <div class="unassigned-row"><span style="color:var(--gray3);font-size:14px">⋮⋮</span><div style="flex:1;text-align:right"><div style="font-size:14px;font-weight:700">משפחת לוי</div><div style="font-size:12px;color:var(--gray2)">משפחת כלה · 4 אורחים</div></div><span style="color:var(--orange);font-size:20px;cursor:pointer">+</span></div>
-            <div class="unassigned-row"><span style="color:var(--gray3);font-size:14px">⋮⋮</span><div style="flex:1;text-align:right"><div style="font-size:14px;font-weight:700">עומר כהן</div><div style="font-size:12px;color:var(--gray2)">חברים חתן · 2 אורחים</div></div><span style="color:var(--orange);font-size:20px;cursor:pointer">+</span></div>
-            <div class="unassigned-row"><span style="color:var(--gray3);font-size:14px">⋮⋮</span><div style="flex:1;text-align:right"><div style="font-size:14px;font-weight:700">שירה ונועה</div><div style="font-size:12px;color:var(--gray2)">חברות כלה · 3 אורחים</div></div><span style="color:var(--orange);font-size:20px;cursor:pointer">+</span></div>
-            <div class="unassigned-row"><span style="color:var(--gray3);font-size:14px">⋮⋮</span><div style="flex:1;text-align:right"><div style="font-size:14px;font-weight:700">ד"ר אבו-רמי</div><div style="font-size:12px;color:var(--gray2)">עמיתי עבודה · 2 אורחים</div></div><span style="color:var(--orange);font-size:20px;cursor:pointer">+</span></div>
+
+          <div style="padding:10px 12px">
+            <input class="input" id="guestSearch" style="font-size:13px;padding:7px 12px" type="text" placeholder="חפש אורח..." oninput="renderPanel()">
           </div>
-          <div style="padding:14px;border-top:1px solid var(--gray4)">
-            <button class="btn btn-primary btn-full btn-sm">שבץ אוטומטי לשולחן 8</button>
+
+          <div style="flex:1;overflow-y:auto" id="panelBody">
+            <div style="padding:20px;text-align:center;color:var(--gray3)">טוען...</div>
+          </div>
+
+          <div style="padding:12px;border-top:1px solid var(--gray4)" id="panelFooter">
+            <button class="btn btn-primary btn-full btn-sm" id="autoAssignBtn" onclick="autoAssignToSelected()" disabled>
+              שבץ אוטומטי לשולחן הנבחר
+            </button>
           </div>
         </div>
       </div>
     </main>
   </div>
 </div>
+
+<div class="saving-indicator" id="savingIndicator">
+  <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+  שומר...
+</div>
+
 <script src="_shell.js"></script>
-<script>renderShell({ active:'seating', pageTitle:'עורך סידור ישיבה' })</script>
+<script>
+renderShell({ active:'seating', pageTitle:'עורך סידור ישיבה' });
+
+// ── State ─────────────────────────────────────────────────────────────────
+let tables   = [];   // [{ num, capacity, name, zone }]
+let guests   = [];   // full guest array
+let selectedTableNum = null;
+let activeTab = 'unassigned';
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const guestsAtTable = num => guests.filter(g => String(g.table) === String(num));
+const unassigned    = ()  => guests.filter(g => g.table == null && g.rsvp === 'yes');
+const seated        = num => guestsAtTable(num).reduce((s,g) => s + (parseInt(g.count)||1), 0);
+
+function showSaving(msg='שומר...') {
+  const el = document.getElementById('savingIndicator');
+  el.innerHTML = `<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> ${msg}`;
+  el.classList.add('show');
+}
+function hideSaving(msg='נשמר ✓') {
+  const el = document.getElementById('savingIndicator');
+  el.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ── Render Tables Grid ────────────────────────────────────────────────────
+let dragSrcTableNum = null;
+
+function renderTables() {
+  const grid = document.getElementById('tablesGrid');
+  document.getElementById('noTablesMsg').style.display = tables.length ? 'none' : 'block';
+
+  let full=0, partial=0, empty=0;
+  grid.innerHTML = tables.map(t => {
+    const s   = seated(t.num);
+    const cap = t.capacity;
+    const isFull    = s >= cap;
+    const isPartial = s > 0 && s < cap;
+    const isSelected = selectedTableNum === t.num;
+    if (isFull) full++; else if (isPartial) partial++; else empty++;
+    const cls = [isFull?'full':'', isSelected?'selected':''].filter(Boolean).join(' ');
+    return `<div class="table-circle ${cls}"
+        draggable="true"
+        data-num="${t.num}"
+        onclick="selectTable(${t.num})"
+        ondragstart="onTableDragStart(event,${t.num})"
+        ondragend="onTableDragEnd(event)"
+        ondragover="onTableDragOver(event)"
+        ondrop="onDropOnTable(event,${t.num})"
+        ondragleave="onTableDragLeave(event)"
+        title="${t.name||'שולחן '+t.num}">
+      <div class="t-label">שולחן</div>
+      <div class="t-num">${t.num}</div>
+      <div class="t-cap">${s}/${cap}</div>
+      ${t.name?`<div style="font-size:10px;color:var(--gray3);margin-top:2px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Add-table button at the end
+  grid.innerHTML += `<div class="add-table-btn" onclick="openAddTableModal()">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    הוסף שולחן
+  </div>`;
+
+  document.getElementById('badgeFull').textContent    = full    + ' מלאים';
+  document.getElementById('badgePartial').textContent = partial + ' חלקיים';
+  document.getElementById('badgeEmpty').textContent   = empty   + ' ריקים';
+  document.getElementById('statsLabel').textContent   = `${tables.length} שולחנות`;
+  document.getElementById('unassignedLabel').textContent = unassigned().length
+    ? `${unassigned().length} אורחים ממתינים לשיוך`
+    : 'כל האורחים שובצו ✓';
+}
+
+// ── Table drag-and-drop (reorder) ─────────────────────────────────────────
+function onTableDragStart(e, num) {
+  dragSrcTableNum = num;
+  e.dataTransfer.setData('type', 'table');
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+function onTableDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.table-circle').forEach(el => el.classList.remove('drag-over'));
+}
+function onTableDragOver(e) {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('type') || 'guest';
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+function onTableDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+function onDropOnTable(e, targetNum) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+
+  if (dragGuestEmail) {
+    // Drop guest onto table
+    assignGuest(dragGuestEmail, targetNum);
+    dragGuestEmail = null;
+  } else if (dragSrcTableNum !== null && dragSrcTableNum !== targetNum) {
+    // Reorder tables
+    const srcIdx = tables.findIndex(t => t.num === dragSrcTableNum);
+    const dstIdx = tables.findIndex(t => t.num === targetNum);
+    if (srcIdx !== -1 && dstIdx !== -1) {
+      const [moved] = tables.splice(srcIdx, 1);
+      tables.splice(dstIdx, 0, moved);
+      renderTables();
+    }
+    dragSrcTableNum = null;
+  }
+}
+
+// ── Render Side Panel ─────────────────────────────────────────────────────
+let dragGuestEmail = null;
+
+function renderPanel() {
+  const search = (document.getElementById('guestSearch').value || '').toLowerCase();
+  const body   = document.getElementById('panelBody');
+  const count  = document.getElementById('unassignedCount');
+  const unass  = unassigned();
+  count.textContent = unass.length;
+
+  if (activeTab === 'unassigned') {
+    const list = unass.filter(g =>
+      !search || (g.name||'').toLowerCase().includes(search) || (g.category||'').toLowerCase().includes(search)
+    );
+    if (!list.length) {
+      body.innerHTML = `<div style="padding:24px;text-align:center;color:var(--gray3)">
+        ${unass.length ? 'אין תוצאות לחיפוש' : '<b>כל האורחים שובצו ✓</b>'}
+      </div>`;
+      return;
+    }
+    body.innerHTML = list.map(g => `
+      <div class="guest-row" draggable="true"
+        ondragstart="onGuestDragStart(event,'${g.email}')"
+        ondragend="onGuestDragEnd(event)"
+        title="גרור לשולחן או לחץ +">
+        <span style="color:var(--gray3);font-size:12px;cursor:grab">⠿</span>
+        <div class="avatar" style="flex-shrink:0">${g.name?g.name[0]:'?'}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${g.name||g.email}</div>
+          <div style="font-size:12px;color:var(--gray2)">${g.category||''} · ${g.count||1} אורחים</div>
+        </div>
+        <button class="btn btn-primary btn-sm" style="padding:4px 10px;font-size:13px"
+          onclick="assignGuest('${g.email}',${selectedTableNum})"
+          ${selectedTableNum===null ? 'disabled title="בחר שולחן תחילה"' : ''}>+</button>
+      </div>`).join('');
+  } else {
+    const tbl = tables.find(t => t.num === selectedTableNum);
+    if (!tbl) { body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray3)">בחר שולחן</div>'; return; }
+    const list = guestsAtTable(selectedTableNum).filter(g =>
+      !search || (g.name||'').toLowerCase().includes(search) || (g.category||'').toLowerCase().includes(search)
+    );
+    if (!list.length) {
+      body.innerHTML = `<div style="padding:24px;text-align:center;color:var(--gray3)">אין אורחים בשולחן זה<br><small>גרור אורח לשולחן זה</small></div>`;
+      return;
+    }
+    body.innerHTML = list.map(g => `
+      <div class="guest-row">
+        <div class="avatar" style="flex-shrink:0;background:var(--orange-light);color:var(--orange)">${g.name?g.name[0]:'?'}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${g.name||g.email}</div>
+          <div style="font-size:12px;color:var(--gray2)">${g.category||''} · ${g.count||1} אורחים</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="padding:4px 8px;color:var(--red);font-size:18px;line-height:1"
+          onclick="unassignGuest('${g.email}')" title="הסר מהשולחן">×</button>
+      </div>`).join('');
+  }
+}
+
+// ── Guest drag ────────────────────────────────────────────────────────────
+function onGuestDragStart(e, email) {
+  dragGuestEmail = email;
+  dragSrcTableNum = null;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging-guest');
+}
+function onGuestDragEnd(e) {
+  e.currentTarget.classList.remove('dragging-guest');
+  dragGuestEmail = null;
+}
+
+// ── Add Table Modal ───────────────────────────────────────────────────────
+function openAddTableModal() {
+  const next = tables.length ? Math.max(...tables.map(t=>t.num)) + 1 : 1;
+  document.getElementById('newTableNum').value  = next;
+  document.getElementById('newTableCap').value  = 10;
+  document.getElementById('newTableName').value = '';
+  document.getElementById('addTableModal').classList.add('open');
+}
+function closeAddTableModal() {
+  document.getElementById('addTableModal').classList.remove('open');
+}
+async function saveNewTable() {
+  const num  = parseInt(document.getElementById('newTableNum').value);
+  const cap  = parseInt(document.getElementById('newTableCap').value) || 10;
+  const name = document.getElementById('newTableName').value.trim();
+  if (!num || num < 1) { alert('הכנס מספר שולחן תקין'); return; }
+  if (tables.find(t => t.num === num)) { alert(`שולחן ${num} כבר קיים`); return; }
+
+  tables.push({ num, capacity: cap, name, zone: '' });
+  tables.sort((a,b) => a.num - b.num);
+  closeAddTableModal();
+  renderTables();
+
+  // Save to API
+  showSaving('שומר שולחן...');
+  const host_email    = getHostEmail();
+  const tablesPayload = {};
+  tables.forEach(t => { tablesPayload[String(t.num)] = { capacity: t.capacity, name: t.name, zone: t.zone }; });
+  const data = await apiPost('/tables', { host_email, tables: tablesPayload });
+  if (data.message === 'Tables updated') hideSaving(`שולחן ${num} נוסף ✓`);
+  else hideSaving('נשמר ✓');
+}
+
+// ── Select Table ──────────────────────────────────────────────────────────
+function selectTable(num) {
+  selectedTableNum = num;
+  const tbl = tables.find(t => t.num === num);
+  document.getElementById('selectedTableLabel').textContent =
+    `שולחן ${num}${tbl?.name ? ' – '+tbl.name : ''} (${seated(num)})`;
+  document.getElementById('autoAssignBtn').disabled = false;
+  renderTables();
+  renderPanel();
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tabUnassigned').classList.toggle('active', tab==='unassigned');
+  document.getElementById('tabTable').classList.toggle('active', tab==='table');
+  renderPanel();
+}
+
+// ── Assign / Unassign ─────────────────────────────────────────────────────
+async function assignGuest(guestEmail, tableNum) {
+  if (tableNum === null) { alert('בחר שולחן תחילה'); return; }
+  const tbl = tables.find(t => t.num === tableNum);
+  if (tbl) {
+    const s = seated(tableNum);
+    const g = guests.find(x => x.email === guestEmail);
+    const count = parseInt(g?.count) || 1;
+    if (s + count > tbl.capacity) {
+      alert(`שולחן ${tableNum} מלא (${s}/${tbl.capacity})`);
+      return;
+    }
+  }
+
+  // Optimistic update
+  const g = guests.find(x => x.email === guestEmail);
+  if (g) g.table = tableNum;
+  renderTables();
+  renderPanel();
+
+  showSaving();
+  const host_email = getHostEmail();
+  const data = await apiPut('/guests', { host_email, guest_email: guestEmail, table: tableNum });
+  if (data.guest_email || data.message === 'Guest updated') hideSaving();
+  else { alert('שגיאה: ' + (data.message || JSON.stringify(data))); if (g) g.table = null; renderTables(); renderPanel(); }
+}
+
+async function unassignGuest(guestEmail) {
+  const g = guests.find(x => x.email === guestEmail);
+  const prev = g?.table;
+  if (g) g.table = null;
+  renderTables();
+  renderPanel();
+
+  showSaving('מסיר שיוך...');
+  const host_email = getHostEmail();
+  const data = await apiPut('/guests', { host_email, guest_email: guestEmail, table: null });
+  if (data.guest_email || data.message === 'Guest updated') hideSaving('הוסר ✓');
+  else { alert('שגיאה: ' + (data.message||'')); if (g) g.table = prev; renderTables(); renderPanel(); }
+}
+
+// ── Auto assign to selected table ─────────────────────────────────────────
+async function autoAssignToSelected() {
+  if (selectedTableNum === null) { alert('בחר שולחן תחילה'); return; }
+  const tbl = tables.find(t => t.num === selectedTableNum);
+  if (!tbl) return;
+
+  const free = tbl.capacity - seated(selectedTableNum);
+  const toAssign = unassigned().slice(0, free);
+  if (!toAssign.length) { alert('אין אורחים ממתינים לשיוך'); return; }
+
+  showSaving(`משבץ ${toAssign.length} אורחים...`);
+  const host_email = getHostEmail();
+  for (const g of toAssign) {
+    g.table = selectedTableNum;
+    await apiPut('/guests', { host_email, guest_email: g.email, table: selectedTableNum });
+  }
+  renderTables();
+  renderPanel();
+  hideSaving(`שובצו ${toAssign.length} אורחים ✓`);
+}
+
+// ── Auto seating (full Lambda) ─────────────────────────────────────────────
+async function runAutoSeating() {
+  if (!confirm('לרוץ שיוך אוטומטי לכל האורחים? שיבוצים קיימים ישמרו.')) return;
+  showSaving('מריץ שיוך אוטומטי...');
+  const data = await apiPost('/seating', { host_email: getHostEmail() });
+  if (data.message === 'Seating generated') {
+    guests = await loadGuests();
+    renderTables();
+    renderPanel();
+    hideSaving(`שובצו ${data.total_guests_seated || ''} אורחים ✓`);
+  } else {
+    hideSaving();
+    alert('שגיאה: ' + (data.message || JSON.stringify(data)));
+  }
+}
+
+// ── Load on page load ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const host_email = getHostEmail();
+  if (!host_email) { location.href = 'SCD540~1.HTM'; return; }
+
+  const [host, guestList] = await Promise.all([
+    apiGet('/hosts', { host_email }),
+    loadGuests()
+  ]);
+
+  guests = guestList;
+  tables = Object.entries(host.tables || {}).map(([id, t]) => ({
+    num:      parseInt(id),
+    capacity: parseInt(t.capacity) || 10,
+    name:     t.name || '',
+    zone:     t.zone || '',
+  })).sort((a, b) => a.num - b.num);
+
+  renderTables();
+  renderPanel();
+});
+</script>
 </body>
 </html>

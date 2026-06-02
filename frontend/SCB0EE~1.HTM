@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – שליחת הזמנה</title>
+<title>SeatMe – שליחת הזמנה</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -61,14 +61,14 @@
           <div class="card" style="display:flex;align-items:center;gap:16px">
             <div class="avatar avatar-lg" style="background:#D0E8D0">👨</div>
             <div style="flex:1">
-              <div style="font-size:18px;font-weight:800">עמית כהן</div>
-              <div style="font-size:14px;color:var(--gray2);margin-top:2px">054-1234567 · amit@example.com</div>
+              <div style="font-size:18px;font-weight:800" id="guestName">טוען...</div>
+              <div style="font-size:14px;color:var(--gray2);margin-top:2px" id="guestContact"></div>
               <div style="margin-top:8px;display:flex;gap:8px">
-                <span class="badge badge-green">מאושר הגעה</span>
-                <span class="badge badge-outline">משפחה של החתן</span>
+                <span class="badge badge-gray" id="guestRsvp">טרם השיב</span>
+                <span class="badge badge-outline" id="guestCategory" style="display:none"></span>
               </div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="location='screen-edit-guest.html'">ערוך פרטים</button>
+            <button class="btn btn-ghost btn-sm" onclick="location='SC2FE1~1.HTM'">ערוך פרטים</button>
           </div>
 
           <!-- Channel Selection -->
@@ -95,7 +95,7 @@
                 <div class="ch-icon" style="background:var(--orange-light)">✉️</div>
                 <div>
                   <div class="ch-name">אימייל</div>
-                  <div class="ch-sub">amit@example.com</div>
+                  <div class="ch-sub" id="emailLabel">אימייל</div>
                 </div>
                 <input type="radio" class="channel-radio" name="channel">
               </div>
@@ -112,16 +112,7 @@
                 <button class="template-btn" onclick="setTemplate(this,'rsvp')">בקשת אישור</button>
               </div>
             </div>
-            <textarea class="input" id="msgBody" rows="7" oninput="updatePreview()" style="font-size:14px;line-height:1.7">שלום עמית! 🎉
-
-אנחנו שמחים להזמין אותך לחתונה של נועה וגיא
-📅 15 ספטמבר 2024 | 19:00
-📍 "הגן הקסום", תל אביב
-
-לאישור הגעה ופרטים נוספים:
-👉 https://eventflow.app/invite/EF-98A2
-
-מחכים לך! 💛</textarea>
+            <textarea class="input" id="msgBody" rows="7" oninput="updatePreview()" style="font-size:14px;line-height:1.7"></textarea>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
               <div style="font-size:12px;color:var(--gray3)" id="charCount">0 תווים</div>
               <button class="btn btn-ghost btn-sm" onclick="copyMessage()">
@@ -165,7 +156,7 @@
               <div class="phone-topbar">
                 <div style="width:32px;height:32px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;font-size:16px">💒</div>
                 <div>
-                  <div class="contact-name">נועה וגיא 💍</div>
+                  <div class="contact-name" id="phoneContactName">...</div>
                   <div style="font-size:10px;color:#aaa">מקוון</div>
                 </div>
               </div>
@@ -176,7 +167,7 @@
                   📅 15 ספטמבר 2024 | 19:00<br>
                   📍 "הגן הקסום", תל אביב<br><br>
                   לאישור הגעה ופרטים נוספים:<br>
-                  👉 <span style="color:#9EE8AE">eventflow.app/invite/EF-98A2</span>
+                  👉 <span style="color:#9EE8AE">SeatMe.app/invite/EF-98A2</span>
                 </div>
                 <div class="wa-time">17:42 ✓✓</div>
               </div>
@@ -193,9 +184,9 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           שלח לכל האורחים שטרם אישרו
         </button>
-        <button class="btn btn-primary btn-lg" onclick="sendNow()">
+        <button class="btn btn-primary btn-lg" id="sendBtn" onclick="sendNow()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          שלח לעמית כהן
+          <span id="sendBtnLabel">שלח</span>
         </button>
       </div>
     </main>
@@ -204,15 +195,19 @@
 
 <div class="success-toast" id="toast"></div>
 
+<script src="_api.js"></script>
 <script src="_shell.js"></script>
 <script>
-renderShell({ active:'guests', pageTitle:'שליחת הזמנה' });
+renderShell({ active:'send-invite', pageTitle:'שליחת הזמנה' });
 
-const templates = {
-  invite: `שלום עמית! 🎉\n\nאנחנו שמחים להזמין אותך לחתונה של נועה וגיא\n📅 15 ספטמבר 2024 | 19:00\n📍 "הגן הקסום", תל אביב\n\nלאישור הגעה ופרטים נוספים:\n👉 https://eventflow.app/invite/EF-98A2\n\nמחכים לך! 💛`,
-  reminder: `היי עמית, רצינו להזכיר 😊\n\nחתונת נועה וגיא מתקרבת!\n📅 15 ספטמבר 2024 | 19:00\n📍 "הגן הקסום", תל אביב\n\nאם עוד לא אישרת הגעה:\n👉 https://eventflow.app/invite/EF-98A2`,
-  rsvp: `שלום עמית 🌸\n\nנשמח לדעת אם תוכל/י להגיע לחתונה שלנו!\n📅 15 ספטמבר 2024\n\nאשר/י הגעה:\n👉 https://eventflow.app/rsvp/EF-98A2\n\nתודה רבה! 💕`
-};
+let templates = { invite:'', reminder:'', rsvp:'' };
+let _guestName = '';
+
+function buildTemplates(guestName, eventName, dateStr, location, inviteLink) {
+  templates.invite   = `שלום ${guestName}! 🎉\n\nאנחנו שמחים להזמין אותך ל${eventName}\n📅 ${dateStr}\n📍 ${location}\n\nלאישור הגעה ופרטים נוספים:\n👉 ${inviteLink}\n\nמחכים לך! 💛`;
+  templates.reminder = `היי ${guestName}, רצינו להזכיר 😊\n\n${eventName} מתקרב!\n📅 ${dateStr}\n📍 ${location}\n\nאם עוד לא אישרת הגעה:\n👉 ${inviteLink}`;
+  templates.rsvp     = `שלום ${guestName} 🌸\n\nנשמח לדעת אם תוכל/י להגיע!\n📅 ${dateStr}\n\nאשר/י הגעה:\n👉 ${inviteLink}\n\nתודה רבה! 💕`;
+}
 
 function setTemplate(btn, key) {
   document.querySelectorAll('.template-btn').forEach(b => b.classList.remove('active'));
@@ -228,42 +223,92 @@ function updatePreview() {
   document.getElementById('previewBubble').innerHTML = html;
 }
 
-function selectChannel(el, ch) {
+function selectChannel(el) {
   document.querySelectorAll('.channel-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   el.querySelector('input').checked = true;
 }
 
 function copyMessage() {
-  const text = document.getElementById('msgBody').value;
-  navigator.clipboard.writeText(text).then(() => showToast('ההודעה הועתקה ✓'));
+  navigator.clipboard.writeText(document.getElementById('msgBody').value)
+    .then(() => showToast('ההודעה הועתקה ✓'));
 }
 
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
   t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="'+(isError?'#E53935':'#43A047')+'" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 function sendNow() {
-  const btn = event.target.closest('button');
+  const btn = document.getElementById('sendBtn');
   btn.disabled = true;
   btn.innerHTML = '<svg style="animation:spin 0.7s linear infinite" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg> שולח...';
   setTimeout(() => {
     btn.disabled = false;
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> שלח לעמית כהן';
-    showToast('ההזמנה נשלחה לעמית כהן! ✓');
-    setTimeout(() => location.href='screen8-guest-profile.html', 1600);
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> <span id="sendBtnLabel">שלח ל' + _guestName + '</span>';
+    showToast('ההזמנה נשלחה ל' + _guestName + '! ✓');
+    setTimeout(() => history.back(), 1800);
   }, 1400);
 }
 
 function sendToAll() {
-  showToast('הודעה נשלחה ל-40 אורחים שטרם השיבו');
+  showToast('הודעה נשלחה לכל האורחים שטרם השיבו');
 }
 
-// Init
-document.getElementById('charCount').textContent = document.getElementById('msgBody').value.length + ' תווים';
+window.addEventListener('DOMContentLoaded', async () => {
+  const host_email  = getHostEmail();
+  const guest_email = sessionStorage.getItem('current_guest_email') ||
+                      new URLSearchParams(location.search).get('guest') || '';
+  if (!host_email || !guest_email) return;
+
+  const [host, guestData] = await Promise.all([
+    apiGet('/hosts', { host_email }),
+    apiGet('/guests', { host_email })
+  ]);
+
+  const g         = (guestData.guests || {})[guest_email];
+  if (!g) return;
+
+  _guestName      = g.name || guest_email;
+  const eventName = host.event_name || host.name || 'האירוע שלנו';
+  const location  = host.location  || '';
+
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  let dateStr = '';
+  if (host.event_date) {
+    const p = host.event_date.split('-');
+    if (p.length === 3) dateStr = `${parseInt(p[2])} ב${months[parseInt(p[1])-1]} ${p[0]}`;
+  }
+
+  const inviteLink = window.location.origin + '/SCREEN~1.HTM?host=' +
+    encodeURIComponent(host_email) + '&guest=' + encodeURIComponent(guest_email);
+
+  // Update guest card
+  document.getElementById('guestName').textContent    = _guestName;
+  document.getElementById('guestContact').textContent = guest_email;
+  document.getElementById('emailLabel').textContent   = guest_email;
+  document.getElementById('phoneContactName').textContent = _guestName + ' 💍';
+
+  const rsvpEl = document.getElementById('guestRsvp');
+  if (g.rsvp === 'yes') { rsvpEl.textContent = 'מאשר הגעה'; rsvpEl.className = 'badge badge-green'; }
+  else if (g.rsvp === 'no') { rsvpEl.textContent = 'לא מגיע'; rsvpEl.className = 'badge badge-red'; }
+  else { rsvpEl.textContent = 'טרם השיב'; rsvpEl.className = 'badge badge-gray'; }
+
+  if (g.category) {
+    const cat = document.getElementById('guestCategory');
+    cat.textContent = g.category;
+    cat.style.display = '';
+  }
+
+  document.getElementById('sendBtnLabel').textContent = 'שלח ל' + _guestName;
+
+  // Build and set templates
+  buildTemplates(_guestName, eventName, dateStr, location, inviteLink);
+  document.getElementById('msgBody').value = templates.invite;
+  updatePreview();
+});
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>

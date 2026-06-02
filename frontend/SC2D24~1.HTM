@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – ייבוא אורחים</title>
+<title>SeatMe – ייבוא אורחים</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -42,7 +42,7 @@
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left" id="topbar-right">
-        <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">ביטול</button>
+        <button class="btn btn-secondary btn-sm" onclick="location='SC9376~1.HTM'">ביטול</button>
         <button class="btn btn-primary btn-sm" id="importBtn" onclick="startImport()" disabled>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
           ייבא אורחים
@@ -52,7 +52,7 @@
     <main class="page-content">
       <div class="page-header">
         <div style="display:flex;align-items:center;gap:14px">
-          <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">← חזור לרשימה</button>
+          <button class="btn btn-secondary btn-sm" onclick="location='SC9376~1.HTM'">← חזור לרשימה</button>
           <div>
             <div class="page-title">ייבוא אורחים מקובץ</div>
             <div class="page-subtitle">טען קובץ Excel או CSV עם רשימת האורחים</div>
@@ -104,11 +104,11 @@
           <!-- Step 2: Column Mapping (hidden until file loaded) -->
           <div class="card" id="step2" style="display:none">
             <div class="section-title">שלב 2 – מיפוי עמודות</div>
-            <div style="font-size:13px;color:var(--gray2);margin-bottom:16px">התאם את עמודות הקובץ שלך לשדות של EventFlow</div>
+            <div style="font-size:13px;color:var(--gray2);margin-bottom:16px">התאם את עמודות הקובץ שלך לשדות של SeatMe</div>
             <div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:6px;margin-bottom:8px;padding:0 4px">
               <div style="font-size:12px;font-weight:700;color:var(--gray3)">עמודה בקובץ</div>
               <div></div>
-              <div style="font-size:12px;font-weight:700;color:var(--gray3)">שדה ב-EventFlow</div>
+              <div style="font-size:12px;font-weight:700;color:var(--gray3)">שדה ב-SeatMe</div>
             </div>
             <div id="mappingRows">
               <!-- injected by JS -->
@@ -301,7 +301,7 @@ function startImport() {
       setTimeout(() => {
         document.getElementById('importOverlay').classList.remove('open');
         showToast(`✓ ${total} אורחים יובאו בהצלחה!`);
-        setTimeout(() => location.href = 'screen7-guest-list.html', 1600);
+        setTimeout(() => location.href = 'SC9376~1.HTM', 1600);
       }, 500);
     }
   }, 300);

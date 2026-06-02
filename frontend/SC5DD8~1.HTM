@@ -2,18 +2,32 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – תצוגת מפה</title>
+<title>SeatMe – תצוגת מפה</title>
 <link rel="stylesheet" href="shared.css">
 <style>
-.canvas-area { background:#F0EDE8; border-radius:var(--radius-lg); position:relative; height:520px; overflow:hidden; }
-.ft { position:absolute; border-radius:50%; background:white; border:2px solid var(--gray4); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:grab; box-shadow:var(--shadow-sm); transition:border-color 0.15s; }
-.ft:hover { border-color:var(--orange); box-shadow:var(--shadow); }
-.ft.sel { border:3px solid var(--orange); background:var(--orange-light); }
+.canvas-wrap { background:#F0EDE8; border-radius:var(--radius-lg); position:relative; height:520px; overflow:hidden; }
+.ft {
+  position:absolute; border-radius:50%; background:white;
+  border:2px solid var(--gray4); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; cursor:grab;
+  box-shadow:var(--shadow-sm); transition:border-color 0.15s, box-shadow 0.15s;
+  user-select:none;
+}
+.ft:hover  { border-color:var(--orange); box-shadow:var(--shadow); }
+.ft.moving { cursor:grabbing; box-shadow:0 8px 28px rgba(0,0,0,0.18); z-index:10; }
+.ft.full-t { border-color:var(--green); background:var(--green-light); }
+.ft.drop-t { border:3px dashed var(--blue) !important; background:var(--blue-light) !important; transform:scale(1.07); }
 .ft .tl { font-size:10px; color:var(--gray2); }
 .ft .tn { font-size:22px; font-weight:900; line-height:1; }
 .ft .tc { font-size:11px; color:var(--gray2); margin-top:3px; background:var(--gray5); padding:1px 8px; border-radius:10px; }
-.ft.sel .tc { background:white; color:var(--orange); }
-.drag-card { position:absolute; background:white; border:1px solid var(--gray4); border-radius:var(--radius); padding:10px 14px; box-shadow:var(--shadow); display:flex; align-items:center; gap:10px; min-width:160px; }
+.ft.full-t .tc { background:white; color:var(--green); font-weight:700; }
+.ft .tn { color:var(--dark); }
+.ft.full-t .tn { color:var(--green); }
+.guest-row { display:flex; align-items:center; gap:8px; padding:10px; border-radius:var(--radius-sm); cursor:grab; background:var(--gray5); border:1px solid var(--gray4); margin-bottom:8px; }
+.guest-row:hover { border-color:var(--orange); background:var(--orange-light); }
+.guest-row.is-dragging { opacity:0.35; }
+.toast-bar { position:fixed; bottom:24px; right:50%; transform:translateX(50%); background:#1C1C1C; color:white; padding:10px 22px; border-radius:10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow-lg); opacity:0; transition:opacity 0.3s; z-index:999; pointer-events:none; }
+.toast-bar.show { opacity:1; }
 </style>
 </head>
 <body>
@@ -23,85 +37,274 @@
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left">
-        <button class="btn btn-secondary btn-sm" onclick="location='screen9-seating-editor.html'">← תצוגת רשת</button>
-        <button class="btn btn-primary btn-sm">שמור פריסה</button>
+        <button class="btn btn-secondary btn-sm" onclick="location='SC8099~1.HTM'">← תצוגת רשת</button>
+        <button class="btn btn-primary btn-sm" onclick="saveLayout()">שמור פריסה</button>
       </div>
     </header>
     <main class="page-content">
-      <!-- Tip -->
+
       <div style="background:white;border:1.5px solid var(--gray4);border-radius:var(--radius-lg);padding:14px 20px;display:flex;align-items:center;gap:12px;margin-bottom:20px">
         <div style="width:32px;height:32px;border-radius:50%;background:var(--orange-light);border:1.5px solid var(--orange-mid);display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E8913A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         </div>
         <div>
-          <strong>טיפ למארח:</strong>
-          <span style="font-size:13px;color:var(--gray2);margin-right:6px">גרור אורחים מהרשימה בצד אל השולחנות כדי לשייך אותם בקלות.</span>
+          <strong>טיפ:</strong>
+          <span style="font-size:13px;color:var(--gray2);margin-right:6px">גרור שולחנות לסידור הפיזי באולם. גרור אורחים מהרשימה לשולחן לשיוך.</span>
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 260px;gap:20px">
+
         <!-- Canvas -->
-        <div class="canvas-area">
-          <div class="ft" style="width:110px;height:110px;left:60px;top:80px"><div class="tl">שולחן</div><div class="tn">1</div><div class="tc">8/10</div></div>
-          <div class="ft" style="width:110px;height:110px;left:220px;top:40px"><div class="tl">שולחן</div><div class="tn">2</div><div class="tc">10/10</div></div>
-          <div class="ft sel" style="width:120px;height:120px;left:380px;top:160px"><div class="tl">שולחן</div><div class="tn" style="color:var(--orange)">3</div><div class="tc">4/12</div></div>
-          <div class="ft" style="width:100px;height:100px;left:60px;top:310px"><div class="tl">שולחן</div><div class="tn">4</div><div class="tc">0/8</div></div>
-          <div class="ft" style="width:110px;height:110px;left:240px;top:330px"><div class="tl">שולחן</div><div class="tn">5</div><div class="tc">6/10</div></div>
-          <div class="ft" style="width:100px;height:100px;left:560px;top:60px"><div class="tl">שולחן</div><div class="tn">6</div><div class="tc">8/10</div></div>
-          <div class="ft" style="width:110px;height:110px;left:580px;top:310px"><div class="tl">שולחן</div><div class="tn">7</div><div class="tc">5/12</div></div>
-          <!-- Drag card near table 1 -->
-          <div class="drag-card" style="left:150px;top:120px">
-            <span style="color:var(--gray3);font-size:14px">⋮⋮</span>
-            <div style="text-align:right;flex:1"><div style="font-size:13px;font-weight:700">דוד כהן</div><div style="font-size:11px;color:var(--gray2)">...גורר לשולחן</div></div>
-            <div style="width:30px;height:30px;border-radius:50%;background:#D1E8FF;display:flex;align-items:center;justify-content:center">👨</div>
+        <div class="canvas-wrap" id="canvas">
+          <div id="canvasEmpty" style="padding:60px;text-align:center;color:var(--gray3);display:none">
+            אין שולחנות מוגדרים.
+            <a href="SC61AB~1.HTM" style="color:var(--orange)">הוסף שולחנות</a>
           </div>
           <!-- Legend -->
-          <div style="position:absolute;bottom:14px;left:14px;display:flex;gap:14px;background:rgba(255,255,255,0.85);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--gray2)">
-            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--orange);display:inline-block"></span>שולחן נבחר</span>
-            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:white;border:2px solid var(--gray4);display:inline-block"></span>שולחן פנוי</span>
+          <div style="position:absolute;bottom:14px;left:14px;display:flex;gap:14px;background:rgba(255,255,255,0.88);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--gray2);pointer-events:none">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block"></span>מלא</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;background:white;border:2px solid var(--gray4);display:inline-block"></span>פנוי</span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:50%;border:2px dashed var(--blue);display:inline-block"></span>גרירה</span>
           </div>
         </div>
 
-        <!-- Side: unassigned list -->
-        <div class="card" style="padding:0;display:flex;flex-direction:column;overflow:hidden">
+        <!-- Guest Panel -->
+        <div class="card" style="padding:0;display:flex;flex-direction:column;overflow:hidden;max-height:520px">
           <div style="padding:14px 16px;border-bottom:1px solid var(--gray4);display:flex;align-items:center;justify-content:space-between">
-            <span class="badge badge-orange" style="font-size:12px">4</span>
+            <span class="badge badge-orange" id="unassignedBadge">0</span>
             <div style="font-weight:700;font-size:14px">אורחים ללא שיוך</div>
           </div>
           <div style="padding:10px 12px;border-bottom:1px solid var(--gray4)">
-            <div style="position:relative">
-              <input class="input" style="font-size:12px;padding:7px 12px 7px 32px" type="text" placeholder="חפש...">
-              <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gray3)" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </div>
+            <input class="input" style="font-size:12px;padding:7px 12px" type="text" id="guestSearch" placeholder="חפש..." oninput="renderPanel()">
           </div>
-          <div style="flex:1;overflow-y:auto;padding:8px">
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
-              <span style="color:var(--gray3)">⋮⋮</span>
-              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">משפחת לוי</div><div style="font-size:11px;color:var(--gray2)">4 אורחים</div></div>
-              <span style="color:var(--orange);font-size:18px">+</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
-              <span style="color:var(--gray3)">⋮⋮</span>
-              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">עומר כהן</div><div style="font-size:11px;color:var(--gray2)">2 אורחים</div></div>
-              <span style="color:var(--orange);font-size:18px">+</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4);margin-bottom:8px">
-              <span style="color:var(--gray3)">⋮⋮</span>
-              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">שירה ונועה</div><div style="font-size:11px;color:var(--gray2)">3 אורחים</div></div>
-              <span style="color:var(--orange);font-size:18px">+</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius-sm);cursor:grab;background:var(--gray5);border:1px solid var(--gray4)">
-              <span style="color:var(--gray3)">⋮⋮</span>
-              <div style="flex:1;text-align:right"><div style="font-size:13px;font-weight:700">ד"ר אבו-רמי</div><div style="font-size:11px;color:var(--gray2)">2 אורחים</div></div>
-              <span style="color:var(--orange);font-size:18px">+</span>
-            </div>
+          <div style="flex:1;overflow-y:auto;padding:8px" id="guestPanel">
+            <div style="padding:20px;text-align:center;color:var(--gray3)">טוען...</div>
           </div>
         </div>
+
       </div>
     </main>
   </div>
 </div>
+
+<div class="toast-bar" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script src="_api.js"></script>
 <script src="_shell.js"></script>
-<script>renderShell({ active:'drag', pageTitle:'תצוגת מפה – גרירה' })</script>
+<script>
+renderShell({ active:'drag', pageTitle:'תצוגת מפה' });
+
+// ── State ──────────────────────────────────────────────────────────────────
+let tables = [];  // [{ num, capacity, name, zone, x, y }]
+let guests = [];
+
+// ── Table mouse-drag (free positioning) ────────────────────────────────────
+let drag = null;  // { num, ox, oy, mx, my }
+
+function onTblDown(e, num) {
+  if (e.button !== 0 || dragGuestEmail) return;
+  e.preventDefault();
+  const t = tables.find(t => t.num === num);
+  if (!t) return;
+  drag = { num, ox: t.x, oy: t.y, mx: e.clientX, my: e.clientY };
+  document.querySelector(`.ft[data-num="${num}"]`)?.classList.add('moving');
+}
+
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const t = tables.find(t => t.num === drag.num);
+  if (!t) return;
+  const canvas = document.getElementById('canvas');
+  const rect   = canvas.getBoundingClientRect();
+  const sz     = tblSize(t);
+  t.x = Math.max(0, Math.min(rect.width  - sz, drag.ox + e.clientX - drag.mx));
+  t.y = Math.max(0, Math.min(rect.height - sz, drag.oy + e.clientY - drag.my));
+  const el = document.querySelector(`.ft[data-num="${drag.num}"]`);
+  if (el) { el.style.left = t.x + 'px'; el.style.top = t.y + 'px'; }
+});
+
+document.addEventListener('mouseup', () => {
+  if (drag) {
+    document.querySelector(`.ft[data-num="${drag.num}"]`)?.classList.remove('moving');
+    drag = null;
+  }
+});
+
+// ── Guest HTML5 drag ────────────────────────────────────────────────────────
+let dragGuestEmail = null;
+
+function onGuestDragStart(e, email) {
+  dragGuestEmail = email;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('is-dragging');
+}
+function onGuestDragEnd(e) {
+  dragGuestEmail = null;
+  e.currentTarget.classList.remove('is-dragging');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const tblSize  = t => t.capacity > 10 ? 120 : 100;
+const seatedAt = num => guests
+  .filter(g => String(g.table) === String(num))
+  .reduce((s, g) => s + (parseInt(g.count) || 1), 0);
+
+function autoLayout() {
+  const canvas = document.getElementById('canvas');
+  const W    = canvas.offsetWidth || 700;
+  const SZ   = 110, GAP = 18, PAD = 20;
+  const cols = Math.max(1, Math.floor((W - PAD * 2 + GAP) / (SZ + GAP)));
+  tables.forEach((t, i) => {
+    if (t.x != null && t.y != null) return;
+    const col = i % cols, row = Math.floor(i / cols);
+    t.x = PAD + col * (SZ + GAP);
+    t.y = PAD + row * (SZ + GAP);
+  });
+}
+
+// ── Render Canvas ───────────────────────────────────────────────────────────
+function renderCanvas() {
+  const canvas = document.getElementById('canvas');
+  canvas.querySelectorAll('.ft').forEach(el => el.remove());
+  document.getElementById('canvasEmpty').style.display = tables.length ? 'none' : 'block';
+
+  tables.forEach(t => {
+    const s    = seatedAt(t.num);
+    const sz   = tblSize(t);
+    const full = s >= t.capacity;
+
+    const el = document.createElement('div');
+    el.className  = 'ft' + (full ? ' full-t' : '');
+    el.dataset.num = t.num;
+    el.style.cssText = `width:${sz}px;height:${sz}px;left:${t.x}px;top:${t.y}px`;
+    el.draggable = false;
+    el.innerHTML  = `
+      <div class="tl">שולחן</div>
+      <div class="tn">${t.num}</div>
+      <div class="tc">${s}/${t.capacity}</div>
+      ${t.name ? `<div style="font-size:10px;color:var(--gray2);max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>` : ''}
+    `;
+
+    el.addEventListener('mousedown', e => onTblDown(e, t.num));
+    el.addEventListener('dragover',  e => { e.preventDefault(); if (dragGuestEmail) el.classList.add('drop-t'); });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-t'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('drop-t');
+      if (dragGuestEmail) assignGuest(dragGuestEmail, t.num);
+    });
+
+    canvas.appendChild(el);
+  });
+}
+
+// ── Render Panel ────────────────────────────────────────────────────────────
+function renderPanel() {
+  const q    = (document.getElementById('guestSearch').value || '').toLowerCase();
+  const all  = guests.filter(g => g.rsvp === 'yes' && g.table == null);
+  const list = q ? all.filter(g => (g.name || '').toLowerCase().includes(q) || (g.category || '').toLowerCase().includes(q)) : all;
+
+  document.getElementById('unassignedBadge').textContent = all.length;
+
+  const panel = document.getElementById('guestPanel');
+  if (!list.length) {
+    panel.innerHTML = `<div style="padding:24px;text-align:center;color:var(--gray3)">${all.length ? 'אין תוצאות' : '<b>כל האורחים שובצו ✓</b>'}</div>`;
+    return;
+  }
+  panel.innerHTML = list.map(g => `
+    <div class="guest-row" draggable="true"
+      data-email="${g.email.replace(/"/g,'&quot;')}"
+      ondragstart="onGuestDragStart(event,this.dataset.email)"
+      ondragend="onGuestDragEnd(event)">
+      <span style="color:var(--gray3);font-size:14px">⋮⋮</span>
+      <div style="flex:1;text-align:right">
+        <div style="font-size:13px;font-weight:700">${g.name || g.email}</div>
+        <div style="font-size:11px;color:var(--gray2)">${g.category || ''} · ${g.count || 1} אורחים</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Assign guest ─────────────────────────────────────────────────────────────
+async function assignGuest(email, tableNum) {
+  const tbl   = tables.find(t => t.num === tableNum);
+  const guest = guests.find(g => g.email === email);
+  if (!tbl || !guest) return;
+
+  const count = parseInt(guest.count) || 1;
+  if (seatedAt(tableNum) + count > tbl.capacity) {
+    alert(`שולחן ${tableNum} מלא (${seatedAt(tableNum)}/${tbl.capacity})`);
+    return;
+  }
+
+  guest.table = tableNum;
+  renderCanvas();
+  renderPanel();
+
+  const host_email = getHostEmail();
+  const data = await apiPut('/guests', { host_email, guest_email: email, table: tableNum });
+  if (data.guest_email || data.message === 'Guest updated') {
+    showToast(`${guest.name || email} שובץ לשולחן ${tableNum} ✓`);
+  } else {
+    alert('שגיאה: ' + (data.message || JSON.stringify(data)));
+    guest.table = null;
+    renderCanvas();
+    renderPanel();
+  }
+}
+
+// ── Save layout (positions) ───────────────────────────────────────────────────
+async function saveLayout() {
+  const host_email = getHostEmail();
+  const payload = {};
+  tables.forEach(t => {
+    payload[String(t.num)] = {
+      capacity: t.capacity,
+      name:     t.name  || '',
+      zone:     t.zone  || '',
+      x:        Math.round(t.x),
+      y:        Math.round(t.y),
+    };
+  });
+  const data = await apiPost('/tables', { host_email, tables: payload });
+  if (data.message === 'Tables updated') showToast('הפריסה נשמרה ✓');
+  else alert('שגיאה: ' + (data.message || JSON.stringify(data)));
+}
+
+function showToast(msg) {
+  document.getElementById('toastMsg').textContent = msg;
+  const bar = document.getElementById('toast');
+  bar.classList.add('show');
+  setTimeout(() => bar.classList.remove('show'), 2500);
+}
+
+// ── Load on page load ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const host_email = getHostEmail();
+  if (!host_email) { location.href = 'SCD540~1.HTM'; return; }
+
+  const [host, guestList] = await Promise.all([
+    apiGet('/hosts', { host_email }),
+    loadGuests(),
+  ]);
+
+  guests = guestList;
+  tables = Object.entries(host.tables || {}).map(([id, t]) => ({
+    num:      parseInt(id),
+    capacity: parseInt(t.capacity) || 10,
+    name:     t.name || '',
+    zone:     t.zone || '',
+    x:        t.x != null ? parseInt(t.x) : null,
+    y:        t.y != null ? parseInt(t.y) : null,
+  })).sort((a, b) => a.num - b.num);
+
+  autoLayout();
+  renderCanvas();
+  renderPanel();
+});
+</script>
 </body>
 </html>

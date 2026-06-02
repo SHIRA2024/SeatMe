@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – הוספת אורח</title>
+<title>SeatMe – הוספת אורח</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -24,7 +24,7 @@
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left" id="topbar-right">
-        <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">ביטול</button>
+        <button class="btn btn-secondary btn-sm" onclick="location='SC9376~1.HTM'">ביטול</button>
         <button class="btn btn-primary btn-sm" onclick="saveGuest()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
           שמור אורח
@@ -34,7 +34,7 @@
     <main class="page-content">
       <div class="page-header">
         <div style="display:flex;align-items:center;gap:14px">
-          <button class="btn btn-secondary btn-sm" onclick="location='screen7-guest-list.html'">← חזור לרשימה</button>
+          <button class="btn btn-secondary btn-sm" onclick="location='SC9376~1.HTM'">← חזור לרשימה</button>
           <div>
             <div class="page-title">הוספת אורח חדש</div>
             <div class="page-subtitle">מלא את פרטי האורח — שדות עם * הם חובה</div>
@@ -224,12 +224,12 @@ function saveGuest() {
   if (!validate()) return;
   const toast = document.getElementById('toast');
   toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); location.href = 'screen7-guest-list.html'; }, 1400);
+  setTimeout(() => { toast.classList.remove('show'); location.href = 'SC9376~1.HTM'; }, 1400);
 }
 
 function saveAndSend() {
   if (!validate()) return;
-  location.href = 'screen-send-invite.html';
+  location.href = 'SCB0EE~1.HTM';
 }
 </script>
 </body>

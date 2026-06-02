@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – ניהול שולחנות</title>
+<title>SeatMe – ניהול שולחנות</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -11,7 +11,7 @@
 .table-card.is-vip { border-color:var(--orange);background:var(--orange-light); }
 .table-capacity-bar { height:6px;border-radius:4px;background:var(--gray4);margin-top:8px;overflow:hidden; }
 .table-capacity-fill { height:100%;border-radius:4px;background:var(--orange);transition:width 0.3s; }
-.table-actions { display:flex;gap:6px;opacity:0;transition:opacity 0.15s;position:absolute;top:14px;left:14px; }
+.table-actions { display:flex;gap:6px;opacity:0;transition:opacity 0.15s;flex-shrink:0; }
 .table-card:hover .table-actions { opacity:1; }
 /* Add/Edit Modal */
 .modal-bg { position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:none;align-items:center;justify-content:center; }
@@ -85,10 +85,6 @@
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left" id="topbar-right">
-        <button class="btn btn-secondary btn-sm" onclick="autoGenerate()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-          יצור אוטומטי
-        </button>
         <button class="btn btn-primary btn-sm" onclick="openModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           הוסף שולחן
@@ -101,22 +97,6 @@
           <div class="page-title">ניהול שולחנות</div>
           <div class="page-subtitle">הגדר את מספר השולחנות, הקיבולת והסוג</div>
         </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <div style="text-align:center">
-            <div style="font-size:22px;font-weight:800;color:var(--orange)" id="totalTables">12</div>
-            <div style="font-size:12px;color:var(--gray2)">שולחנות</div>
-          </div>
-          <div style="width:1px;height:36px;background:var(--gray4)"></div>
-          <div style="text-align:center">
-            <div style="font-size:22px;font-weight:800;color:var(--green)" id="totalCapacity">120</div>
-            <div style="font-size:12px;color:var(--gray2)">מקומות ישיבה</div>
-          </div>
-          <div style="width:1px;height:36px;background:var(--gray4)"></div>
-          <div style="text-align:center">
-            <div style="font-size:22px;font-weight:800;color:var(--blue)">184</div>
-            <div style="font-size:12px;color:var(--gray2)">אורחים משובצים</div>
-          </div>
-        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 300px;gap:24px">
@@ -126,11 +106,11 @@
           <!-- Bulk actions -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <div style="display:flex;gap:8px">
-              <button class="btn btn-secondary btn-sm" onclick="location='screen9-seating-editor.html'">
+              <button class="btn btn-secondary btn-sm" onclick="location='SC8099~1.HTM'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 עורך ישיבה
               </button>
-              <button class="btn btn-secondary btn-sm" onclick="confirm('לאפס את כל השיבוצים?')">אפס שיבוצים</button>
+              <button class="btn btn-secondary btn-sm" onclick="resetAssignments()">אפס שיבוצים</button>
             </div>
             <div style="font-size:13px;color:var(--gray2)" id="tableCountLabel">מציג 12 שולחנות</div>
           </div>
@@ -149,26 +129,6 @@
             </div>
           </div>
 
-          <!-- Auto Generate -->
-          <div class="card" style="background:var(--blue-light);border-color:#BBDEFB">
-            <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">⚡ יצירה אוטומטית</div>
-            <div style="font-size:13px;color:#1565C0;margin-bottom:12px;line-height:1.6">
-              על פי הגדרות האירוע (250 אורחים, 10 לשולחן) EventFlow ממליץ על <strong>25 שולחנות</strong>
-            </div>
-            <button class="btn btn-secondary btn-full btn-sm" style="border-color:#1976D2;color:#1565C0" onclick="autoGenerate()">
-              צור 25 שולחנות אוטומטית
-            </button>
-          </div>
-
-          <div class="card">
-            <div class="section-title">סוגי שולחנות</div>
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
-              <div style="display:flex;justify-content:space-between"><span>⭕ עגולים</span><span style="font-weight:700">8</span></div>
-              <div style="display:flex;justify-content:space-between"><span>⬜ מרובעים</span><span style="font-weight:700">2</span></div>
-              <div style="display:flex;justify-content:space-between"><span>➖ ארוכים</span><span style="font-weight:700">1</span></div>
-              <div style="display:flex;justify-content:space-between"><span>⭐ VIP</span><span style="font-weight:700;color:var(--orange)">1</span></div>
-            </div>
-          </div>
         </div>
       </div>
     </main>
@@ -177,24 +137,12 @@
 
 <div class="success-toast" id="toast"></div>
 
+<script src="_api.js"></script>
 <script src="_shell.js"></script>
 <script>
 renderShell({ active:'tables', pageTitle:'ניהול שולחנות' });
 
-const tables = [
-  { num:1,  name:'חתן וכלה', cap:12, assigned:12, vip:true,  zone:'ליד הבמה' },
-  { num:2,  name:'משפחה גרעינית', cap:10, assigned:8,  vip:false, zone:'מרכז האולם' },
-  { num:3,  name:'משפחה מורחבת', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
-  { num:4,  name:'חברים קרובים', cap:10, assigned:9,  vip:false, zone:'מרכז האולם' },
-  { num:5,  name:'עמיתים לעבודה', cap:10, assigned:7, vip:false, zone:'מרכז האולם' },
-  { num:6,  name:'', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
-  { num:7,  name:'', cap:10, assigned:6,  vip:false, zone:'מרכז האולם' },
-  { num:8,  name:'', cap:10, assigned:10, vip:false, zone:'מרכז האולם' },
-  { num:9,  name:'', cap:8,  assigned:5,  vip:false, zone:'כניסה' },
-  { num:10, name:'', cap:8,  assigned:8,  vip:false, zone:'כניסה' },
-  { num:11, name:'', cap:8,  assigned:4,  vip:false, zone:'גן חיצוני' },
-  { num:12, name:'', cap:10, assigned:3,  vip:false, zone:'גן חיצוני' },
-];
+let tables = [];
 
 function renderTables() {
   const g = document.getElementById('tablesGrid');
@@ -203,44 +151,42 @@ function renderTables() {
     const color = pct >= 100 ? 'var(--green)' : pct >= 60 ? 'var(--orange)' : 'var(--blue)';
     return `
     <div class="table-card${t.vip?' is-vip':''}">
-      <div class="table-actions">
-        <button class="btn btn-secondary btn-sm" onclick="editTable(${i})" style="padding:4px 8px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>
-        <button class="btn btn-danger btn-sm" onclick="deleteTable(${i})" style="padding:4px 8px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-        </button>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <div style="font-size:24px;font-weight:900;color:${t.vip?'var(--orange)':'var(--dark)'}">${t.num}</div>
-          <div style="font-size:12px;color:var(--gray2);margin-top:1px">${t.name||'שולחן '+t.num}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:7px;min-width:0">
+          <div style="font-size:24px;font-weight:900;line-height:1;color:${t.vip?'var(--orange)':'var(--dark)'};flex-shrink:0">${t.num}</div>
+          ${t.vip?'<span class="badge badge-orange" style="font-size:11px;flex-shrink:0">VIP</span>':''}
         </div>
-        ${t.vip?'<span class="badge badge-orange" style="font-size:11px">VIP</span>':''}
+        <div class="table-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editTable(${i})" style="padding:4px 8px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTable(${i})" style="padding:4px 8px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          </button>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-        <span style="font-size:13px;color:var(--gray2)">${t.assigned}/${t.cap} אורחים</span>
+      <div style="font-size:12px;color:var(--gray2);margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name||'שולחן '+t.num}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;color:var(--gray2)">${t.assigned}/${t.cap} אורחים</span>
         <span style="font-size:12px;font-weight:700;color:${color}">${pct}%</span>
       </div>
       <div class="table-capacity-bar">
-        <div class="table-capacity-fill" style="width:${pct}%;background:${color}"></div>
+        <div class="table-capacity-fill" style="width:${Math.min(pct,100)}%;background:${color}"></div>
       </div>
-      <div style="font-size:11px;color:var(--gray3);margin-top:6px">${t.zone}</div>
+      ${t.zone?`<div style="font-size:11px;color:var(--gray3);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.zone}</div>`:''}
     </div>`;
   }).join('');
 
   // Capacity sidebar list
-  document.getElementById('capacityList').innerHTML = tables.slice(0,6).map(t => {
+  document.getElementById('capacityList').innerHTML = tables.map(t => {
     const pct = Math.round(t.assigned/t.cap*100);
     return `<div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:12px;font-weight:700;width:24px;color:var(--dark)">${t.num}</span>
       <div style="flex:1"><div class="table-capacity-bar" style="margin:0"><div class="table-capacity-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':pct>=60?'var(--orange)':'var(--blue)'}"></div></div></div>
       <span style="font-size:12px;color:var(--gray2);width:32px;text-align:left">${pct}%</span>
     </div>`;
-  }).join('') + `<div style="font-size:12px;color:var(--orange);text-align:center;margin-top:4px;cursor:pointer">+ עוד 6 שולחנות</div>`;
+  }).join('');
 
-  document.getElementById('totalTables').textContent = tables.length;
-  document.getElementById('totalCapacity').textContent = tables.reduce((s,t)=>s+t.cap,0);
   document.getElementById('tableCountLabel').textContent = 'מציג ' + tables.length + ' שולחנות';
 }
 
@@ -262,24 +208,53 @@ function deleteTable(i) {
   }
 }
 
-function saveTable() {
-  const num = parseInt(document.getElementById('tNum').value);
+async function saveTable() {
+  const num  = parseInt(document.getElementById('tNum').value);
   const name = document.getElementById('tName').value;
-  const cap = parseInt(document.getElementById('tCapacity').value) || 10;
+  const cap  = parseInt(document.getElementById('tCapacity').value) || 10;
+  const zone = document.getElementById('tZone').value;
+  const vip  = document.getElementById('tVip').checked;
   if (!num) return;
-  tables.push({ num, name, cap, assigned:0, vip:document.getElementById('tVip').checked, zone:document.getElementById('tZone').value });
-  tables.sort((a,b)=>a.num-b.num);
+
+  const existing = tables.findIndex(t => t.num === num);
+  if (existing >= 0) tables[existing] = { num, name, cap, assigned: tables[existing].assigned || 0, vip, zone };
+  else               tables.push({ num, name, cap, assigned: 0, vip, zone });
+  tables.sort((a,b) => a.num - b.num);
+
+  // Save to API
+  const host_email = getHostEmail();
+  const tablesPayload = {};
+  tables.forEach(t => { tablesPayload[String(t.num)] = { capacity: t.cap, name: t.name, zone: t.zone }; });
+  await apiPost('/tables', { host_email, tables: tablesPayload });
+
   closeModal();
   renderTables();
-  showToast('שולחן ' + num + ' נוסף');
+  showToast('שולחן ' + num + ' נשמר ✓');
 }
 
-function autoGenerate() {
-  if (!confirm('יצור 25 שולחנות אוטומטית? פעולה זו תחליף את הרשימה הנוכחית.')) return;
-  tables.length = 0;
-  for (let i=1;i<=25;i++) tables.push({num:i,name:'',cap:10,assigned:Math.floor(Math.random()*11),vip:i===1,zone:i<=3?'ליד הבמה':i<=15?'מרכז האולם':'גן חיצוני'});
+async function resetAssignments() {
+  if (!confirm('לאפס את כל שיבוצי השולחנות? פעולה זו לא ניתנת לביטול.')) return;
+  const host_email = getHostEmail();
+  const guests = await loadGuests();
+  const assigned = guests.filter(g => g.table != null);
+  if (!assigned.length) { showToast('אין שיבוצים לאיפוס'); return; }
+
+  showToast('מאפס שיבוצים...');
+  for (const g of assigned) {
+    await apiPut('/guests', { host_email, guest_email: g.email, table: null });
+  }
+
+  // Reset assigned count in local state
+  tables.forEach(t => t.assigned = 0);
   renderTables();
-  showToast('25 שולחנות נוצרו בהצלחה ✓');
+  showToast(`אופסו ${assigned.length} שיבוצים ✓`);
+}
+
+async function autoGenerate() {
+  if (!confirm('יצור שולחנות אוטומטית? פעולה זו תחליף את הרשימה הנוכחית.')) return;
+  const data = await apiPost('/seating', { host_email: getHostEmail() });
+  showToast(data.message || 'סידור ישיבה נוצר ✓');
+  setTimeout(() => location.reload(), 1200);
 }
 
 function selectType(btn) {
@@ -294,7 +269,32 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'), 2000);
 }
 
-renderTables();
+// Load tables from API on page load
+window.addEventListener('DOMContentLoaded', async () => {
+  const host_email = getHostEmail();
+  if (!host_email) return;
+
+  const host = await apiGet('/hosts', { host_email });
+  const rawTables = host.tables || {};
+
+  // Load guests to calculate assigned per table
+  const guests = await loadGuests();
+  const assignedMap = {};
+  guests.forEach(g => {
+    if (g.table != null) assignedMap[String(g.table)] = (assignedMap[String(g.table)] || 0) + (parseInt(g.count) || 1);
+  });
+
+  tables = Object.entries(rawTables).map(([id, t]) => ({
+    num:      parseInt(id),
+    name:     t.name || '',
+    cap:      t.capacity || 10,
+    assigned: assignedMap[id] || 0,
+    vip:      false,
+    zone:     t.zone || '',
+  })).sort((a, b) => a.num - b.num);
+
+  renderTables();
+});
 </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – עריכת פרטי אורח</title>
+<title>SeatMe – עריכת פרטי אורח</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -60,7 +60,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           מחק אורח
         </button>
-        <button class="btn btn-secondary btn-sm" onclick="location='screen8-guest-profile.html'">ביטול</button>
+        <button class="btn btn-secondary btn-sm" onclick="location='SCE6A5~1.HTM'">ביטול</button>
         <button class="btn btn-primary btn-sm" onclick="saveChanges()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
           שמור שינויים
@@ -70,7 +70,7 @@
     <main class="page-content">
       <div class="page-header">
         <div style="display:flex;align-items:center;gap:14px">
-          <button class="btn btn-secondary btn-sm" onclick="location='screen8-guest-profile.html'">← חזור לפרופיל</button>
+          <button class="btn btn-secondary btn-sm" onclick="location='SCE6A5~1.HTM'">← חזור לפרופיל</button>
           <div>
             <div class="page-title">עריכת פרטי אורח</div>
             <div class="page-subtitle">עריכת פרטי עמית כהן</div>
@@ -153,13 +153,8 @@
             <div class="grid-2" style="gap:16px">
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">מספר שולחן</label>
-                <select class="input" id="tableNum">
-                  <option>— ללא שיבוץ עדיין —</option>
-                  <option>שולחן 1 – VIP</option>
-                  <option>שולחן 2 – משפחה גרעינית</option>
-                  <option>שולחן 3 – משפחה מורחבת</option>
-                  <option selected>שולחן 14 – שולחן משפחה – גרעינית</option>
-                  <option>שולחן 5 – עמיתים</option>
+                <select class="input" id="tableNumber">
+                  <option value="">— ללא שיבוץ עדיין —</option>
                 </select>
               </div>
               <div class="form-group" style="margin-bottom:0">
@@ -168,7 +163,7 @@
               </div>
             </div>
             <div style="margin-top:12px">
-              <button class="btn btn-ghost btn-sm" onclick="location='screen11-assign-seat.html'">
+              <button class="btn btn-ghost btn-sm" onclick="location='SC1782~1.HTM'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 פתח עורך ישיבה
               </button>
@@ -204,15 +199,15 @@
           <div class="card">
             <div class="section-title">פעולות מהירות</div>
             <div style="display:flex;flex-direction:column;gap:8px">
-              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen-send-invite.html'">
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='SCB0EE~1.HTM'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 שלח הזמנה
               </button>
-              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen8-guest-profile.html'">
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='SCE6A5~1.HTM'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 צפה בפרופיל
               </button>
-              <button class="btn btn-secondary btn-full btn-sm" onclick="location='screen3-qr-code.html'">
+              <button class="btn btn-secondary btn-full btn-sm" onclick="location='SCREEN~3.HTM'">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 הצג QR כרטיס
               </button>
@@ -257,54 +252,74 @@
 <script>
 renderShell({ active:'guests', pageTitle:'עריכת אורח' });
 
-// Live preview
 document.getElementById('guestName').addEventListener('input', e => {
   document.getElementById('previewName').textContent = e.target.value || 'שם האורח';
-});
-document.getElementById('guestPhone').addEventListener('input', e => {
-  document.getElementById('previewPhone').textContent = e.target.value || 'מספר טלפון';
 });
 
 function changeCount(delta) {
   const el = document.getElementById('guestCount');
   el.value = Math.max(0, Math.min(20, parseInt(el.value||0) + delta));
 }
-
 function selectTag(el) {
   document.querySelectorAll('.tag-chip').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
 }
-
-let currentStatus = 'confirmed';
 function setStatus(s) {
-  currentStatus = s;
-  document.querySelectorAll('.rsvp-status-box').forEach(b => {
-    b.classList.remove('active-confirmed','active-declined','active-pending');
-  });
-  document.getElementById('status-'+s).classList.add('active-'+s);
+  document.querySelectorAll('.rsvp-status-box').forEach(b =>
+    b.classList.remove('active-confirmed','active-declined','active-pending'));
+  document.getElementById('status-'+s)?.classList.add('active-'+s);
 }
-
-function saveChanges() {
-  const toast = document.getElementById('toast');
-  toast.classList.add('show');
-  setTimeout(() => { toast.classList.remove('show'); location.href = 'screen8-guest-profile.html'; }, 1400);
-}
-
 function openDeleteModal() {
   document.getElementById('deleteGuestName').textContent = document.getElementById('guestName').value || 'האורח';
   document.getElementById('deleteModal').classList.add('open');
 }
-function closeDeleteModal() {
-  document.getElementById('deleteModal').classList.remove('open');
-}
-function confirmDelete() {
-  closeDeleteModal();
-  const toast = document.getElementById('toast');
-  toast.querySelector('span') && (toast.querySelector('div') || toast).childNodes[1] && null;
-  toast.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E53935" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg> האורח נמחק';
-  toast.classList.add('show');
-  setTimeout(() => { location.href = 'screen7-guest-list.html'; }, 1400);
-}
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const params     = new URLSearchParams(location.search);
+  const guestEmail = params.get('guest');
+  if (!guestEmail) return;
+
+  sessionStorage.setItem('current_guest_email', guestEmail);
+
+  // Load guest data
+  const guests = await loadGuests();
+  const g = guests.find(x => x.email === guestEmail);
+  if (g) {
+    document.getElementById('guestName').value  = g.name  || '';
+    document.getElementById('guestEmail').value = g.email || '';
+    document.getElementById('guestCount').value = g.count || 1;
+    document.getElementById('previewName').textContent = g.name || '';
+    document.querySelector('.page-subtitle').textContent = 'עריכת פרטי ' + (g.name || guestEmail);
+    document.getElementById('deleteGuestName').textContent = g.name || guestEmail;
+
+    // RSVP status
+    if      (g.rsvp === 'yes') setStatus('confirmed');
+    else if (g.rsvp === 'no')  setStatus('declined');
+    else                        setStatus('pending');
+
+    // Category
+    if (g.category) {
+      document.querySelectorAll('.tag-chip').forEach(c => {
+        if (c.textContent.trim() === g.category) c.classList.add('selected');
+        else c.classList.remove('selected');
+      });
+    }
+  }
+
+  // Load tables for dropdown
+  const host_email = getHostEmail();
+  const host = await apiGet('/hosts', { host_email });
+  const sel  = document.getElementById('tableNumber');
+  sel.innerHTML = '<option value="">— ללא שיבוץ עדיין —</option>';
+  Object.entries(host.tables || {}).sort((a,b) => parseInt(a[0])-parseInt(b[0])).forEach(([id, t]) => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = 'שולחן ' + id + (t.name ? ' – ' + t.name : '');
+    if (String(g?.table) === id) opt.selected = true;
+    sel.appendChild(opt);
+  });
+});
 </script>
 </body>
 </html>

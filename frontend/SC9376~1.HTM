@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – רשימת מוזמנים</title>
+<title>SeatMe – רשימת מוזמנים</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .filter-chip { padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid var(--gray4);background:white;cursor:pointer;transition:all 0.15s;color:var(--dark); }
@@ -45,7 +45,7 @@
     <header class="topbar">
       <div class="topbar-right"><div id="topbar-title"></div></div>
       <div class="topbar-left">
-        <button class="btn btn-primary btn-sm" onclick="location='screen-add-guest.html'">
+        <button class="btn btn-primary btn-sm" onclick="location='SC2133~1.HTM'">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           הוסף אורח
         </button>
@@ -58,11 +58,11 @@
           <div class="page-subtitle">250 מוזמנים · 184 מאושרים · 26 ביטולים · 40 טרם השיבו</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
+          <button class="btn btn-secondary btn-sm" onclick="location='SCB0EE~1.HTM'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             שלח הזמנות
           </button>
-          <button class="btn btn-secondary btn-sm" onclick="location='screen-send-seating.html'">
+          <button class="btn btn-secondary btn-sm" onclick="location='SC6AE5~1.HTM'">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
             שלח סידורי ישיבה
           </button>
@@ -100,106 +100,8 @@
               <th>סטטוס</th>
               <th>פעולות</th>
             </tr></thead>
-            <tbody>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#D1E8FF">👴</div></td>
-                <td style="font-weight:700">משפחת כהן אברהם</td>
-                <td style="color:var(--gray2)">054-1234567</td>
-                <td>4</td>
-                <td><span style="color:var(--orange);font-weight:600">שולחן 5</span></td>
-                <td><span class="badge badge-outline">מגיע/ה ✓</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('משפחת כהן אברהם')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#D0EED0">👫</div></td>
-                <td style="font-weight:700">שרה ודניאל לוי</td>
-                <td style="color:var(--gray2)">052-9876543</td>
-                <td>2</td>
-                <td><span style="color:var(--orange);font-weight:600">שולחן 2</span></td>
-                <td><span class="badge badge-outline">מגיע/ה ✓</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('שרה ודניאל לוי')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#E8E0D0">👨</div></td>
-                <td style="font-weight:700">יוסי מזרחי</td>
-                <td style="color:var(--gray2)">050-1112233</td>
-                <td>1</td>
-                <td><span style="color:var(--gray3)">לא שובץ</span></td>
-                <td><span class="badge badge-gray">טרם השיב ⏱</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('יוסי מזרחי')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#FFE0E0">👥</div></td>
-                <td style="font-weight:700">עמית ונועה ישראלי</td>
-                <td style="color:var(--gray2)">053-7778899</td>
-                <td>0</td>
-                <td><span style="color:var(--gray3)">—</span></td>
-                <td><span class="badge badge-red">לא מגיע/ה ✗</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('עמית ונועה ישראלי')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#E8E0D0">👴</div></td>
-                <td style="font-weight:700">סבא וסבתא רבקה</td>
-                <td style="color:var(--gray2)">054-3334455</td>
-                <td>2</td>
-                <td><span style="color:var(--orange);font-weight:600">שולחן 1</span></td>
-                <td><span class="badge badge-outline">מגיע/ה ✓</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('סבא וסבתא רבקה')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
-              <tr style="cursor:pointer" onclick="location='screen8-guest-profile.html'">
-                <td><div class="avatar avatar-md" style="background:#E0D8F0">👩</div></td>
-                <td style="font-weight:700">מיכל אהרוני</td>
-                <td style="color:var(--gray2)">058-6667788</td>
-                <td>3</td>
-                <td><span style="color:var(--gray3)">לא שובץ</span></td>
-                <td><span class="badge badge-gray">טרם השיב ⏱</span></td>
-                <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-edit-guest.html'">ערוך</button>
-                  <button class="btn btn-secondary btn-sm" onclick="location='screen-send-invite.html'">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                  <button class="btn btn-danger btn-sm" onclick="openDelete('מיכל אהרוני')">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                  </button>
-                </div></td>
-              </tr>
+            <tbody id="guestTableBody">
+              <tr><td colspan="7" style="text-align:center;color:var(--gray3);padding:32px">טוען אורחים...</td></tr>
             </tbody>
           </table>
         </div>
@@ -217,23 +119,74 @@
 <script>
 renderShell({ active:'guests', pageTitle:'רשימת מוזמנים' });
 
-let pendingDelete = null;
-function openDelete(name) {
-  pendingDelete = name;
+let pendingDeleteEmail = null;
+let allGuests = [];
+
+function rsvpBadge(rsvp) {
+  if (rsvp === 'yes') return '<span class="badge badge-green">מגיע/ה ✓</span>';
+  if (rsvp === 'no')  return '<span class="badge badge-red">לא מגיע/ה ✗</span>';
+  return '<span class="badge badge-gray">טרם השיב ⏱</span>';
+}
+
+function renderGuests(guests) {
+  const tbody = document.getElementById('guestTableBody');
+  if (!guests.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray3);padding:32px">אין אורחים עדיין</td></tr>';
+    return;
+  }
+  tbody.innerHTML = guests.map(g => `
+    <tr style="cursor:pointer" onclick="location='SCE6A5~1.HTM?guest=${encodeURIComponent(g.email)}'">
+      <td><div class="avatar">${g.name ? g.name[0] : '?'}</div></td>
+      <td style="font-weight:700">${g.name || ''}</td>
+      <td style="color:var(--gray2)">${g.email}</td>
+      <td>${g.count || 1}</td>
+      <td>${g.table ? '<span style="color:var(--orange);font-weight:600">שולחן ' + g.table + '</span>' : '<span style="color:var(--gray3)">לא שובץ</span>'}</td>
+      <td>${rsvpBadge(g.rsvp)}</td>
+      <td onclick="event.stopPropagation()"><div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="location='SC2FE1~1.HTM?guest=${encodeURIComponent(g.email)}'">ערוך</button>
+        <button class="btn btn-danger btn-sm" onclick="openDelete('${g.name}','${g.email}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        </button>
+      </div></td>
+    </tr>`).join('');
+
+  document.querySelector('.page-subtitle').textContent =
+    `${guests.length} מוזמנים · ${guests.filter(g=>g.rsvp==='yes').length} מאושרים · ${guests.filter(g=>g.rsvp==='no').length} ביטולים · ${guests.filter(g=>g.rsvp==='?'||!g.rsvp).length} טרם השיבו`;
+}
+
+function openDelete(name, email) {
+  pendingDeleteEmail = email;
   document.getElementById('deleteGuestName').textContent = name;
   document.getElementById('deleteModal').classList.add('open');
 }
 function closeDelete() { document.getElementById('deleteModal').classList.remove('open'); }
-function confirmDelete() {
+
+function setFilter(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const filter = el.textContent.trim();
+  if (filter === 'הכל')          renderGuests(allGuests);
+  else if (filter === 'מגיעים')   renderGuests(allGuests.filter(g => g.rsvp === 'yes'));
+  else if (filter === 'לא מגיעים') renderGuests(allGuests.filter(g => g.rsvp === 'no'));
+  else                             renderGuests(allGuests.filter(g => g.rsvp === '?' || !g.rsvp));
+}
+
+async function confirmDelete() {
   closeDelete();
+  if (!pendingDeleteEmail) return;
+  sessionStorage.setItem('current_guest_email', pendingDeleteEmail);
+  await window.confirmDeleteGuest?.();
+  allGuests = allGuests.filter(g => g.email !== pendingDeleteEmail);
+  renderGuests(allGuests);
   const t = document.getElementById('toast');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
-function setFilter(el) {
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  allGuests = await loadGuests();
+  renderGuests(allGuests);
+});
 </script>
 </body>
 </html>

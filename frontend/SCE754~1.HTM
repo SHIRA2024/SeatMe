@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=1200">
-<title>EventFlow – הגדרות אירוע</title>
+<title>SeatMe – הגדרות אירוע</title>
 <link rel="stylesheet" href="shared.css">
 <style>
 .section-title { font-size:13px;font-weight:700;color:var(--gray2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray4); }
@@ -94,7 +94,7 @@
             <div class="grid-2" style="gap:16px">
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">תאריך האירוע *</label>
-                <input class="input" type="date" value="2024-09-15">
+                <input class="input" type="date" value="2024-09-15" id="eventDate">
               </div>
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">שעת פתיחת שערים</label>
@@ -102,7 +102,7 @@
               </div>
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">שעת הטקס</label>
-                <input class="input" type="time" value="19:00">
+                <input class="input" type="time" value="19:00" id="eventCeremonyTime">
               </div>
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">שעת סיום משוערת</label>
@@ -117,7 +117,7 @@
             <div style="display:flex;flex-direction:column;gap:14px">
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">שם האולם / הגן *</label>
-                <input class="input" type="text" value="הגן הקסום">
+                <input class="input" type="text" value="הגן הקסום" id="eventLocation">
               </div>
               <div class="grid-2" style="gap:14px">
                 <div class="form-group" style="margin-bottom:0">
@@ -157,7 +157,7 @@
             <div class="grid-2" style="gap:16px">
               <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">מספר אורחים מתוכנן</label>
-                <input class="input" type="number" value="250">
+                <input class="input" type="number" value="250" id="eventCapacity">
                 <div class="form-hint">סה"כ כולל כל הנפשות</div>
               </div>
               <div class="form-group" style="margin-bottom:0">
@@ -200,9 +200,9 @@
           <!-- Preview Card -->
           <div class="card" style="background:linear-gradient(160deg,var(--orange) 0%,var(--orange-hover) 100%);border:none;color:white;padding:24px">
             <div style="font-size:11px;font-weight:600;opacity:0.8;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">תצוגה מקדימה</div>
-            <div style="font-size:20px;font-weight:800;margin-bottom:4px" id="previewTitle">החתונה של נועה וגיא</div>
-            <div style="font-size:13px;opacity:0.85;margin-bottom:14px">📅 15 ספטמבר 2024 · 19:00</div>
-            <div style="font-size:13px;opacity:0.85">📍 הגן הקסום, תל אביב</div>
+            <div style="font-size:20px;font-weight:800;margin-bottom:4px" id="previewTitle">...</div>
+            <div style="font-size:13px;opacity:0.85;margin-bottom:14px" id="previewDate">📅 ...</div>
+            <div style="font-size:13px;opacity:0.85" id="previewLocation">📍 ...</div>
           </div>
 
           <!-- Stats -->
@@ -211,19 +211,19 @@
             <div style="display:flex;flex-direction:column;gap:10px;font-size:14px">
               <div style="display:flex;justify-content:space-between">
                 <span style="color:var(--gray2)">אורחים ברשימה</span>
-                <span style="font-weight:700">250</span>
+                <span style="font-weight:700" id="statGuests">—</span>
               </div>
               <div style="display:flex;justify-content:space-between">
                 <span style="color:var(--gray2)">אחוז מילוי</span>
-                <span style="font-weight:700;color:var(--orange)">89%</span>
+                <span style="font-weight:700;color:var(--orange)" id="statFill">—</span>
               </div>
               <div style="display:flex;justify-content:space-between">
                 <span style="color:var(--gray2)">שולחנות מוגדרים</span>
-                <span style="font-weight:700">25</span>
+                <span style="font-weight:700" id="statTables">—</span>
               </div>
               <div style="display:flex;justify-content:space-between">
                 <span style="color:var(--gray2)">נוצר בתאריך</span>
-                <span style="font-weight:700">01.03.2024</span>
+                <span style="font-weight:700" id="statCreated">—</span>
               </div>
             </div>
           </div>
@@ -261,9 +261,25 @@
 
 <div class="success-toast" id="toast"></div>
 
+<script src="_api.js"></script>
 <script src="_shell.js"></script>
 <script>
 renderShell({ active:'settings', pageTitle:'הגדרות אירוע' });
+
+const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+function fmtDate(iso, time) {
+  const p = iso.split('-');
+  if (p.length !== 3) return iso;
+  const d = `${parseInt(p[2])} ב${MONTHS[parseInt(p[1])-1]} ${p[0]}`;
+  return time ? `📅 ${d} · ${time}` : `📅 ${d}`;
+}
+
+function updatePreviewDate() {
+  const d = document.getElementById('eventDate')?.value;
+  const t = document.getElementById('eventCeremonyTime')?.value || '';
+  if (d) document.getElementById('previewDate').textContent = fmtDate(d, t);
+}
 
 document.getElementById('eventName').addEventListener('input', e => {
   document.getElementById('previewTitle').textContent = e.target.value || 'שם האירוע';
@@ -296,16 +312,63 @@ function copyLink(text) {
   showToast('הקישור הועתק!');
 }
 
-function saveSettings() {
-  showToast('ההגדרות נשמרו בהצלחה ✓');
-}
-
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#43A047" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ' + msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const host_email = getHostEmail();
+  if (!host_email) { location.href = 'SCD540~1.HTM'; return; }
+
+  const host = await apiGet('/hosts', { host_email });
+  if (!host.email) return;
+
+  const eventName = host.event_name || host.name || '';
+  const eventDate = host.event_date || '';
+  const location  = host.location  || '';
+  const capacity  = parseInt(host.capacity) || 0;
+
+  // Populate form fields
+  if (eventName) document.getElementById('eventName').value = eventName;
+  if (eventDate) document.getElementById('eventDate').value = eventDate;
+  if (location)  document.getElementById('eventLocation').value = location;
+  if (capacity)  document.getElementById('eventCapacity').value = capacity;
+
+  // Populate preview card
+  document.getElementById('previewTitle').textContent = eventName || 'שם האירוע';
+  if (eventDate) {
+    const t = document.getElementById('eventCeremonyTime')?.value || '';
+    document.getElementById('previewDate').textContent = fmtDate(eventDate, t);
+  }
+  if (location) document.getElementById('previewLocation').textContent = `📍 ${location}`;
+
+  // Real-time preview listeners
+  document.getElementById('eventDate')?.addEventListener('input', updatePreviewDate);
+  document.getElementById('eventCeremonyTime')?.addEventListener('input', updatePreviewDate);
+  document.getElementById('eventLocation')?.addEventListener('input', e => {
+    document.getElementById('previewLocation').textContent = `📍 ${e.target.value || '...'}`;
+  });
+
+  // Stats — guests
+  const guests    = await loadGuests();
+  const guestCount = guests.length;
+  const yesCount  = guests.filter(g => g.rsvp === 'yes').reduce((s,g) => s + (parseInt(g.count)||1), 0);
+  const fillPct   = capacity > 0 ? Math.round((yesCount / capacity) * 100) : 0;
+  const tableCount = Object.keys(host.tables || {}).length;
+
+  document.getElementById('statGuests').textContent  = guestCount;
+  document.getElementById('statFill').textContent    = `${fillPct}%`;
+  document.getElementById('statTables').textContent  = tableCount;
+
+  if (host.created_at) {
+    const d = new Date(host.created_at);
+    document.getElementById('statCreated').textContent =
+      `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+  }
+});
 </script>
 </body>
 </html>
