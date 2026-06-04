@@ -2,13 +2,15 @@
 
 ## Project Overview
 
-SeatMe is a cloud-based serverless event management system designed to help event hosts manage guests, RSVP responses, and seating arrangements.
+SeatMe is a cloud-based serverless event management system designed to help event hosts manage guests, RSVP responses, seating arrangements, and invitation delivery.
 
 The system is built using AWS cloud services and includes:
 
-* Backend AWS Lambda functions
+* AWS Lambda backend
 * Amazon DynamoDB database
-* Frontend prototype screens
+* Amazon API Gateway
+* Amazon SNS email notifications
+* Amazon S3 frontend hosting
 
 ---
 
@@ -17,21 +19,16 @@ The system is built using AWS cloud services and includes:
 At the current development stage, the project includes:
 
 * DynamoDB single-table database (host-centric design with nested guests and tables)
-* 11 Lambda functions with input validation
-* Automated Lambda deployment script
+* 12 Lambda functions with input validation
+* Automated AWS deployment script
+* API Gateway integration
+* S3-hosted frontend
+* SNS-based invitation delivery
+* RSVP management
 * Greedy seating arrangement algorithm (groups guests by category)
-* Seed data and big example test script (50 guests)
-* Frontend prototype screens
+* Seed data and testing scripts
 * Project documentation
-* GitHub project repository
-
-### Not Yet Implemented
-
-* Amazon API Gateway (Lambda functions are invoked directly)
-* Frontend deployment to Amazon S3
-* Amazon SNS messaging service
-* User authentication
-* System monitoring and logging
+* GitHub repository
 
 ---
 
@@ -41,166 +38,225 @@ At the current development stage, the project includes:
 
 * Amazon DynamoDB
 * AWS Lambda
+* Amazon API Gateway
+* Amazon SNS
+* Amazon S3
 
 ### Programming Languages
 
 * Python 3.12
 * HTML
 * CSS
+* JavaScript
 
 ---
 
 ## DynamoDB Architecture
 
-The project uses a host-centric single-table design in DynamoDB.
+The project uses a host-centric single-table design.
 
 Table name: **SeatMe**
 
-Partition key: `email` (String) — the host's email address.
+Partition key:
 
-Each host row contains:
+* `email` (String) — Host email
 
-| Field | Type | Description |
-|---|---|---|
-| email | String | Host email (partition key) |
-| name | String | Host name |
-| event_name | String | Event name |
-| event_date | String | Event date (YYYY-MM-DD) |
-| event_location | String | Event location |
-| guests | Map | Nested map keyed by guest email |
-| tables | Map | Nested map keyed by table number |
+Each host record contains:
 
-Each guest entry inside the `guests` map contains:
+| Field          | Description      |
+| -------------- | ---------------- |
+| email          | Host email       |
+| name           | Host name        |
+| event_name     | Event name       |
+| event_date     | Event date       |
+| event_location | Event location   |
+| guests         | Nested guest map |
+| tables         | Nested table map |
 
-| Field | Type | Description |
-|---|---|---|
-| name | String | Guest name |
-| rsvp | String | yes / no / ? |
-| table | Number or null | Assigned table number |
-| category | String | Guest category (family, friend, work, etc.) |
-| count | Number | Number of people in this invite (default 1) |
+Each guest contains:
 
-Each table entry inside the `tables` map contains:
-
-| Field | Type | Description |
-|---|---|---|
-| capacity | Number | Number of seats at this table |
+| Field    | Description        |
+| -------- | ------------------ |
+| name     | Guest name         |
+| rsvp     | yes / no / ?       |
+| table    | Assigned table     |
+| category | Guest category     |
+| count    | Number of invitees |
 
 ---
 
 ## Lambda Functions
 
-The project includes 11 Lambda functions:
+The project includes 12 Lambda functions:
 
-| Function | Description |
-|---|---|
-| add_host | Create a new host with event details |
-| delete_host | Delete a host and all their data |
-| get_host | Get host info (event details, tables, guest count) |
-| update_host | Update host name or event details |
-| add_guest | Add a guest to a host's guest list |
-| delete_guest | Remove a guest from the list |
-| get_guests | Get all guests for a host |
-| update_guest | Update guest name, table, category, or count |
-| rsvp_guest | Set a guest's RSVP to yes, no, or ? |
-| set_tables | Define tables and their capacities |
-| generate_seating | Auto-assign confirmed guests to tables by category |
+| Function         | Description                                         |
+| ---------------- | --------------------------------------------------- |
+| add_host         | Create host                                         |
+| get_host         | Retrieve host                                       |
+| update_host      | Update host                                         |
+| delete_host      | Delete host                                         |
+| add_guest        | Add guest                                           |
+| get_guests       | Retrieve guests                                     |
+| update_guest     | Update guest                                        |
+| delete_guest     | Delete guest                                        |
+| rsvp_guest       | Update RSVP                                         |
+| set_tables       | Configure tables                                    |
+| generate_seating | Generate seating arrangement                        |
+| send_invitation  | Send invitation emails and manage SNS subscriptions |
 
-All functions use:
-* Runtime: Python 3.12
-* Timeout: 10 seconds
-* Memory: 128 MB
-* IAM Role: LabRole
+---
+
+## Invitation Flow
+
+The system currently supports invitation delivery through **Email only**.
+
+Flow:
+
+1. Host adds a guest with a real email address.
+2. Host clicks **Send Invitation**.
+3. If this is the guest's first invitation, AWS SNS sends a subscription confirmation email.
+4. Guest confirms the subscription.
+5. Host clicks **Send Invitation** again.
+6. The actual invitation email is delivered.
+
+Notes:
+
+* Confirmation emails may arrive in Spam.
+* WhatsApp and SMS are not currently supported.
+* SNS is used for demonstration purposes in AWS Academy.
 
 ---
 
 ## Setup Instructions
 
-### Step 1 – Open AWS Academy Learner Lab
+### Step 1 – Start AWS Academy Learner Lab
 
 1. Open AWS Academy Learner Lab.
 2. Click **Start Lab**.
-3. Wait until the AWS indicator becomes green.
+3. Wait until AWS becomes available.
 4. Open AWS Console.
 
 ---
 
 ### Step 2 – Open CloudShell
 
-1. Open CloudShell inside AWS Console.
+Open CloudShell from the AWS Console.
 
 ---
 
-### Step 3 – Create the DynamoDB Table
+### Step 3 – Create DynamoDB Table
 
-Upload `database/create_single_table.py` to CloudShell and run:
+Run:
 
 ```bash
 python3 create_single_table.py
 ```
 
-This creates the **SeatMe** DynamoDB table with PAY_PER_REQUEST billing.
+This creates the SeatMe DynamoDB table.
 
 ---
 
-### Step 4 – Insert Seed Data (Optional)
+### Step 4 – Seed Example Data (Optional)
 
-Upload `database/seed_single_table.py` to CloudShell and run:
+Run:
 
 ```bash
 python3 seed_single_table.py
 ```
 
-This inserts one example host with 2 guests and 3 tables.
+This inserts sample hosts, guests, and tables.
 
 ---
 
-### Step 5 – Deploy Lambda Functions
+### Step 5 – Deploy Backend
 
-Upload all files from `backend/lambdas/` to CloudShell and run:
+Navigate to:
 
 ```bash
-python3 deploy_lambdas.py
+cd ~/SeatMe/backend/lambdas
 ```
 
-This automatically creates (or updates) all 11 Lambda functions.
+Run:
+
+```bash
+python3 setup_aws.py
+```
+
+This script automatically:
+
+* Creates or updates Lambda functions
+* Creates or updates API Gateway routes
+* Configures permissions
+* Deploys backend resources
+
+At the end, the script prints an API URL.
 
 ---
 
-### Step 6 – Run the Big Example (Optional)
+### Step 6 – Deploy Frontend
 
-After deploying the Lambda functions, run the test script:
+Navigate to:
 
 ```bash
-python3 big_example.py
+cd ~/SeatMe/frontend
 ```
 
-This creates a host with 50 guests across 4 categories (family, friend, work, neighbor), sets RSVPs, defines 8 tables, generates seating, and prints a seating diagram.
+Run:
+
+```bash
+python3 deploy_frontend.py --api-url YOUR_API_URL
+```
+
+Replace `YOUR_API_URL` with the URL printed by `setup_aws.py`.
+
+At the end, the script prints a Website URL.
+
+Open the Website URL to access the system.
 
 ---
 
 ## Expected Result
 
-After running the setup:
+After deployment:
 
-* **DynamoDB**: AWS Console → DynamoDB → Tables → **SeatMe** — contains host records with nested guest and table data.
-* **Lambda**: AWS Console → Lambda → Functions — 11 functions named `SeatMe-{function_name}`.
+### DynamoDB
+
+* SeatMe table exists
+* Hosts, guests, and tables are stored
+
+### Lambda
+
+* 12 SeatMe Lambda functions are deployed
+
+### API Gateway
+
+* REST endpoints are available
+
+### SNS
+
+* Invitation emails can be delivered
+
+### S3
+
+* Frontend is hosted and accessible
 
 ---
 
 ## Important Notes
 
-* Do not click **Reset** in AWS Academy Learner Lab — it permanently deletes all AWS resources.
-* The project uses the **us-east-1** AWS region.
-* All project code should be backed up regularly to GitHub.
-* Lambda functions are currently invoked directly (no API Gateway yet).
+* Do NOT click Reset in AWS Academy Learner Lab.
+* Use region us-east-1.
+* Back up changes regularly to GitHub.
+* SNS confirmation emails may arrive in Spam.
+* The first invitation triggers SNS subscription confirmation.
 
 ---
 
-## Future Deployment Steps
+## Future Improvements
 
-* API Gateway configuration for HTTP endpoints
-* Frontend deployment to Amazon S3
-* Amazon SNS notifications
+* Replace SNS with Amazon SES for direct email delivery
 * User authentication
-* System monitoring and logging
+* Monitoring and logging
+* Improved invitation templates
+* Production deployment
+* Mobile-responsive UI
