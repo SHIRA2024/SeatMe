@@ -37,10 +37,11 @@ ROUTES = [
     ('rsvp_guest',        'POST',   '/guests/rsvp'),
     ('generate_seating',  'POST',   '/seating'),
     ('set_tables',        'POST',   '/tables'),
+    ('send_invitation',  'POST',   '/invitations/send'),
 ]
 
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
-LAMBDAS_DIR = os.path.normpath(os.path.join(SCRIPT_DIR, '../backend/lambdas'))
+LAMBDAS_DIR = SCRIPT_DIR
 
 sts      = boto3.client('sts',            region_name=REGION)
 iam      = boto3.client('iam',            region_name=REGION)
