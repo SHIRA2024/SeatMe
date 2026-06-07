@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<!-- SeatMe | Features: F07 (View dashboard), F08 (Edit event), F09 (Delete event),
+     F10 (Tables), F11 (Add guest), F12 (List guests), F13 (Update guest),
+     F16 (Auto seating), F17 (Send invitations), F19 (No-login preview link) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage event – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">⚡</span> SeatMe</a>
+      <div class="appbar-actions">
+        <span class="appbar-host" id="hostLabel"></span>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="readonlyBanner" class="readonly-banner" style="display:none;">
+      🔒 Read-only preview — <a href="login.html">log in as this host</a> to make changes.
+    </div>
+    <div style="margin-bottom:20px;">
+      <h1 id="eventTitle" style="font-size:24px;font-weight:800;">Loading…</h1>
+      <p class="muted" id="eventMeta"></p>
+    </div>
+
+    <!-- ── Event details ── -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">Event details</div></div>
+      <form id="eventForm" onsubmit="return saveEvent(event)">
+        <div class="grid-2">
+          <div class="field"><label>Host name</label><input class="input" id="f_name" /></div>
+          <div class="field"><label>Event name</label><input class="input" id="f_event_name" /></div>
+          <div class="field"><label>Event date</label><input class="input" type="date" id="f_event_date" /></div>
+          <div class="field"><label>Location</label><input class="input" id="f_event_location" /></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Save changes</button>
+          <button class="btn btn-danger" type="button" onclick="deleteEvent()">Delete event</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ── Tables ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Tables</div>
+          <div class="card-sub" id="tablesSummary"></div>
+        </div>
+      </div>
+      <div class="inline-list" id="tablesList" style="margin-bottom:14px;"></div>
+      <div class="form-actions" style="align-items:flex-end;">
+        <div class="field" style="margin:0;width:140px;">
+          <label>Seats per table</label>
+          <input class="input" type="number" id="t_capacity" min="1" value="10" />
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="addTable()">+ Add table</button>
+        <button class="btn btn-primary" type="button" onclick="saveTables()">Save tables</button>
+      </div>
+    </div>
+
+    <!-- ── Guest categories ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Guest categories</div>
+          <div class="card-sub">Guests in the same category are seated together.</div>
+        </div>
+      </div>
+      <div class="inline-list" id="catList" style="margin-bottom:14px;"></div>
+      <div class="form-actions" style="align-items:flex-end;">
+        <div class="field" style="margin:0;flex:1;min-width:180px;">
+          <label>New category</label>
+          <input class="input" id="newCat" placeholder="e.g. College friends"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory();}" />
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="addCategory()">+ Add category</button>
+      </div>
+    </div>
+
+    <!-- ── Seating chart ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Seating chart</div>
+          <div class="card-sub" id="seatingSummary">Generate seating to fill your tables.</div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="genSeatingBtn" onclick="generateSeating()">🪄 Generate seating</button>
+      </div>
+      <div id="seatingViz"><div class="empty">No seating yet. Add tables and guests, then generate seating.</div></div>
+    </div>
+
+    <!-- ── Guests ── -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Guests</div>
+          <div class="card-sub" id="guestSummary"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="inviteAllBtn" onclick="inviteAll()">✉️ Send invitations to all</button>
+      </div>
+
+      <form id="guestForm" onsubmit="return addGuest(event)" style="margin-bottom:18px;">
+        <div class="grid-2">
+          <div class="field"><label>Guest name</label><input class="input" id="g_name" required /></div>
+          <div class="field"><label>Guest email</label><input class="input" type="email" id="g_email" required /></div>
+          <div class="field">
+            <label>Category</label>
+            <select class="input" id="g_category"></select>
+          </div>
+          <div class="field">
+            <label>Party size</label>
+            <input class="input" type="number" id="g_count" min="1" value="1" />
+            <div class="hint">Number of people this invitation covers</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit">+ Add guest</button>
+      </form>
+
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>RSVP</th><th>Table</th><th>Category</th><th>Party size</th><th></th></tr>
+          </thead>
+          <tbody id="guestRows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="guestEmpty" style="display:none;">No guests yet. Add your first guest above.</div>
+    </div>
+  </main>
+
+  <script>
+    const HOST = requireHost();
+    // Preview mode (opened via a `?host=` link, no login). Carry the host email
+    // through to linked pages and relabel the header action.
+    const IS_PREVIEW = new URLSearchParams(location.search).has('host');
+    const HOST_QS = IS_PREVIEW ? `&host=${encodeURIComponent(HOST)}` : '';
+    if (IS_PREVIEW) {
+      const b = document.getElementById('logoutBtn');
+      if (b) b.textContent = 'Exit preview';
+    }
+    // An anonymous preview (no session) can view but not change the event;
+    // writes are rejected server-side, so disable the controls to match.
+    const IS_READONLY = IS_PREVIEW && !Session.isAuthed();
+    if (IS_READONLY) {
+      const banner = document.getElementById('readonlyBanner');
+      if (banner) banner.style.display = '';
+    }
+
+    // Disable every form control inside the page body for read-only previews.
+    // Re-run after dynamic content (guest rows, table chips) is rendered.
+    function applyReadonly() {
+      if (!IS_READONLY) return;
+      document.querySelectorAll('main button, main input, main select, main textarea, main a.chip')
+        .forEach((el) => { el.disabled = true; });
+    }
+    let tables = {};
+    let categories = [];
+
+    function rsvpBadge(r) {
+      if (r === 'yes') return '<span class="badge badge-yes">Coming</span>';
+      if (r === 'no')  return '<span class="badge badge-no">Declined</span>';
+      return '<span class="badge badge-maybe">Pending</span>';
+    }
+
+    async function load() {
+      const [h, g] = await Promise.all([Hosts.get(HOST), Guests.list(HOST)]);
+      if (!h.ok || !h.data.email) {
+        toast(h.data.message || 'Host not found', 'err');
+        setTimeout(() => (location.href = 'login.html'), 1000);
+        return;
+      }
+      const host = h.data;
+      sessionStorage.setItem('host_cache', JSON.stringify(host));
+
+      document.getElementById('hostLabel').textContent = host.email;
+      document.getElementById('eventTitle').textContent = host.event_name || 'My event';
+      document.getElementById('eventMeta').textContent =
+        [host.event_date, host.event_location].filter(Boolean).join('   ·   ');
+
+      document.getElementById('f_name').value = host.name || '';
+      document.getElementById('f_event_name').value = host.event_name || '';
+      document.getElementById('f_event_date').value = host.event_date || '';
+      document.getElementById('f_event_location').value = host.event_location || '';
+
+      // Normalize capacities to integers (API returns them as strings)
+      tables = {};
+      const raw = host.tables || {};
+      Object.keys(raw).forEach((k) => { tables[k] = { capacity: parseInt(raw[k].capacity) || 0 }; });
+      renderTables();
+
+      categories = Array.isArray(host.categories) ? host.categories.slice() : [];
+      renderCategories();
+      renderCategoryOptions();
+
+      const guestsObj = g.ok ? (g.data.guests || {}) : {};
+      renderGuests(guestsObj);
+      renderSeating(guestsObj);
+      applyReadonly();
+    }
+
+    /* ── Event details ── */
+    async function saveEvent(e) {
+      e.preventDefault();
+      const payload = {
+        host_email: HOST,
+        name: document.getElementById('f_name').value.trim(),
+        event_name: document.getElementById('f_event_name').value.trim(),
+        event_location: document.getElementById('f_event_location').value.trim(),
+      };
+      const date = document.getElementById('f_event_date').value;
+      if (date) payload.event_date = date;
+
+      const res = await Hosts.update(payload);
+      if (res.ok) { toast('Saved ✓'); sessionStorage.removeItem('host_cache'); load(); }
+      else toast(res.data.message || 'Save failed', 'err');
+      return false;
+    }
+
+    async function deleteEvent() {
+      if (!confirm('Delete this event and all of its guests? This cannot be undone.')) return;
+      const res = await Hosts.remove(HOST);
+      if (res.ok) { Session.clear(); location.href = 'index.html'; }
+      else toast(res.data.message || 'Delete failed', 'err');
+    }
+
+    /* ── Tables ── */
+    function renderTables() {
+      const nums = Object.keys(tables).map(Number).sort((a, b) => a - b);
+      const total = nums.reduce((s, n) => s + (parseInt(tables[n].capacity) || 0), 0);
+      document.getElementById('tablesSummary').textContent =
+        nums.length ? `${nums.length} tables · ${total} seats total` : 'No tables defined yet';
+      document.getElementById('tablesList').innerHTML = nums.length
+        ? nums.map((n) =>
+            `<span class="chip">Table ${n} · ${tables[n].capacity} seats
+               <button title="Remove" onclick="removeTable(${n})">×</button></span>`).join('')
+        : '<span class="muted">Add tables, then generate seating.</span>';
+    }
+
+    function addTable() {
+      const cap = parseInt(document.getElementById('t_capacity').value);
+      if (!cap || cap < 1) { toast('Enter a valid capacity', 'err'); return; }
+      const nums = Object.keys(tables).map(Number);
+      const next = nums.length ? Math.max(...nums) + 1 : 1;
+      tables[next] = { capacity: cap };
+      renderTables();
+    }
+
+    function removeTable(n) { delete tables[n]; renderTables(); }
+
+    async function saveTables() {
+      if (!Object.keys(tables).length) { toast('Add at least one table first', 'err'); return; }
+      const res = await Tables.set(HOST, tables);
+      if (res.ok) toast('Tables saved ✓');
+      else toast(res.data.message || 'Save failed', 'err');
+    }
+
+    /* ── Categories ── */
+    function renderCategories() {
+      const el = document.getElementById('catList');
+      el.innerHTML = categories.length
+        ? categories.map((c, i) =>
+            `<span class="chip">${escapeHtml(c)}
+               <button title="Remove" onclick="removeCategory(${i})">×</button></span>`).join('')
+        : '<span class="muted">No categories yet. Add one below.</span>';
+    }
+
+    function renderCategoryOptions() {
+      const sel = document.getElementById('g_category');
+      const current = sel.value;
+      sel.innerHTML = ['<option value="">— Select category —</option>']
+        .concat(categories.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`))
+        .join('');
+      if (categories.includes(current)) sel.value = current;
+    }
+
+    async function addCategory() {
+      const input = document.getElementById('newCat');
+      const name = input.value.trim();
+      if (!name) { toast('Enter a category name', 'err'); return; }
+      if (categories.some((c) => c.toLowerCase() === name.toLowerCase())) {
+        toast('That category already exists', 'err'); return;
+      }
+      categories.push(name);
+      input.value = '';
+      renderCategories();
+      renderCategoryOptions();
+      await persistCategories();
+    }
+
+    async function removeCategory(i) {
+      categories.splice(i, 1);
+      renderCategories();
+      renderCategoryOptions();
+      await persistCategories();
+    }
+
+    async function persistCategories() {
+      const res = await Hosts.setCategories(HOST, categories);
+      if (res.ok) { toast('Categories saved ✓'); sessionStorage.removeItem('host_cache'); }
+      else { toast(res.data.message || 'Could not save categories', 'err'); load(); }
+    }
+
+    /* ── Seating ── */
+    async function generateSeating() {
+      const btn = document.getElementById('genSeatingBtn');
+      const prev = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Generating…';
+      const res = await Seating.generate(HOST);
+      btn.disabled = false; btn.textContent = prev;
+      if (res.ok) { toast(`Seated ${res.data.total_guests_seated} guests ✓`); reloadGuests(); }
+      else toast(res.data.message || 'Could not generate seating', 'err');
+    }
+
+    function renderSeating(guests) {
+      const viz = document.getElementById('seatingViz');
+      const summary = document.getElementById('seatingSummary');
+      const nums = Object.keys(tables).map(Number).sort((a, b) => a - b);
+      if (!nums.length) {
+        viz.innerHTML = '<div class="empty">Add tables first, then generate seating.</div>';
+        summary.textContent = 'No tables defined yet.';
+        return;
+      }
+
+      const byTable = {};
+      const unseated = [];
+      Object.entries(guests).forEach(([email, g]) => {
+        const hasTable = g.table != null && String(g.table) !== '';
+        const key = hasTable ? String(parseInt(g.table)) : null;
+        if (hasTable && tables[key]) (byTable[key] = byTable[key] || []).push([email, g]);
+        else if (g.rsvp === 'yes') unseated.push([email, g]);
+      });
+
+      const seated = Object.values(byTable).reduce((s, a) => s + a.length, 0);
+      summary.textContent = `${seated} seated · ${unseated.length} confirmed waiting`;
+
+      let html = '<div class="seat-grid">';
+      nums.forEach((n) => {
+        const cap = parseInt(tables[n].capacity) || 0;
+        const list = byTable[String(n)] || [];
+        const used = list.reduce((s, [, g]) => s + (parseInt(g.count) || 1), 0);
+        html += `
+          <div class="seat-table">
+            <div class="seat-table-head">
+              <span class="seat-table-name">Table ${n}</span>
+              <span class="seat-table-cap ${used >= cap && cap ? 'is-full' : ''}">${used}/${cap}</span>
+            </div>
+            <div class="seat-list">
+              ${list.length
+                ? list.map(([email, g]) => seatRow(email, g)).join('')
+                : '<div class="seat-empty">Empty</div>'}
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+
+      if (unseated.length) {
+        html += `
+          <div class="seat-unseated">
+            <div class="seat-unseated-head">Confirmed, not seated (${unseated.length})</div>
+            <div class="inline-list">
+              ${unseated.map(([email, g]) =>
+                `<span class="chip">${escapeHtml(g.name || email)}${g.category ? ' · ' + escapeHtml(g.category) : ''} ×${parseInt(g.count) || 1}</span>`).join('')}
+            </div>
+          </div>`;
+      }
+
+      viz.innerHTML = html;
+    }
+
+    function seatRow(email, g) {
+      const size = parseInt(g.count) || 1;
+      return `<div class="seat-guest">
+        <span class="seat-guest-name">${escapeHtml(g.name || email)}</span>
+        <span class="seat-guest-meta">${g.category ? `<span class="badge badge-cat">${escapeHtml(g.category)}</span>` : ''}×${size}</span>
+      </div>`;
+    }
+
+    /* ── Guests ── */
+    function renderGuests(guests) {
+      const entries = Object.entries(guests);
+      document.getElementById('guestSummary').textContent = entries.length ? `${entries.length} guests` : '';
+      document.getElementById('guestEmpty').style.display = entries.length ? 'none' : 'block';
+
+      document.getElementById('guestRows').innerHTML = entries.map(([email, g]) => {
+        const enc = encodeURIComponent(email);
+        const tableCell = g.table != null
+          ? `<span class="badge badge-table">#${escapeHtml(g.table)}</span>`
+          : '<span class="muted">—</span>';
+        const catCell = g.category
+          ? `<span class="badge badge-cat">${escapeHtml(g.category)}</span>`
+          : '<span class="muted">—</span>';
+        return `
+          <tr>
+            <td><a href="guest.html?guest=${enc}${HOST_QS}">${escapeHtml(g.name || email)}</a></td>
+            <td class="muted">${escapeHtml(email)}</td>
+            <td>${rsvpBadge(g.rsvp)}</td>
+            <td>${tableCell}</td>
+            <td>${catCell}</td>
+            <td>${escapeHtml(g.count || 1)}</td>
+            <td><div class="row-actions">
+              <a class="btn btn-ghost btn-sm" title="Open the guest's RSVP page" href="rsvp.html?host=${encodeURIComponent(HOST)}&guest=${enc}" target="_blank" rel="noopener">🔗 RSVP</a>
+              <button class="btn btn-ghost btn-sm" title="Send invitation" onclick="invite('${enc}')">✉️</button>
+              <a class="btn btn-secondary btn-sm" href="guest.html?guest=${enc}${HOST_QS}">View</a>
+              <button class="btn btn-ghost btn-sm" title="Delete" onclick="removeGuest('${enc}')">🗑️</button>
+            </div></td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function addGuest(e) {
+      e.preventDefault();
+      const guest = {
+        host_email: HOST,
+        name: document.getElementById('g_name').value.trim(),
+        guest_email: document.getElementById('g_email').value.trim().toLowerCase(),
+        category: document.getElementById('g_category').value.trim(),
+        count: parseInt(document.getElementById('g_count').value) || 1,
+      };
+      if (!emailValid(guest.guest_email)) { toast('Please enter a valid guest email', 'err'); return false; }
+
+      const res = await Guests.add(guest);
+      if (res.ok) {
+        toast('Guest added ✓');
+        document.getElementById('guestForm').reset();
+        document.getElementById('g_count').value = 1;
+        reloadGuests();
+      } else {
+        toast(res.data.message || 'Could not add guest', 'err');
+      }
+      return false;
+    }
+
+    async function invite(enc) {
+      const res = await Invitations.send(HOST, decodeURIComponent(enc));
+      if (res.status === 202) toast('Confirmation email sent — guest must confirm first');
+      else if (res.ok) toast('Invitation sent ✓');
+      else toast(res.data.message || 'Could not send invitation', 'err');
+    }
+
+    async function inviteAll() {
+      if (!confirm('Send an invitation email to all guests?')) return;
+      const btn = document.getElementById('inviteAllBtn');
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Sending…';
+      const res = await Invitations.sendAll(HOST);
+      btn.disabled = false; btn.textContent = label;
+      if (res.ok) {
+        const d = res.data || {};
+        const sent = (d.sent || []).length;
+        const pending = (d.pending || []).length;
+        let msg = `${sent} invitation${sent === 1 ? '' : 's'} sent`;
+        if (pending) msg += ` · ${pending} awaiting confirmation`;
+        toast(msg + ' ✓');
+      } else {
+        toast((res.data && res.data.message) || 'Could not send invitations', 'err');
+      }
+    }
+
+    async function removeGuest(enc) {
+      if (!confirm('Remove this guest?')) return;
+      const res = await Guests.remove(HOST, decodeURIComponent(enc));
+      if (res.ok) { toast('Guest removed'); reloadGuests(); }
+      else toast(res.data.message || 'Could not remove guest', 'err');
+    }
+
+    async function reloadGuests() {
+      const g = await Guests.list(HOST);
+      const guestsObj = g.ok ? (g.data.guests || {}) : {};
+      renderGuests(guestsObj);
+      renderSeating(guestsObj);
+      applyReadonly();
+    }
+
+    function logout() { Session.clear(); location.href = 'index.html'; }
+
+    if (HOST) load();
+  </script>
+</body>
+</html>

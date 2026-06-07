@@ -1,0 +1,8 @@
+# SeatMe — Python dependencies
+# Install with:  pip install -r requirements.txt
+#
+# boto3 is the only third-party dependency (it bundles botocore). It is used by
+# the deployment scripts (redeploy_all.py, backend/deploy/*, frontend/deploy_frontend.py)
+# and by the Lambda functions. The AWS Lambda python3.12 runtime already ships
+# with boto3, so this is only needed locally and in AWS CloudShell.
+boto3>=1.34

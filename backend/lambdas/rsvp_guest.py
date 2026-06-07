@@ -1,3 +1,8 @@
+"""
+SeatMe - Guest RSVP (public)
+Feature: F15 (Guest responds via personal link) - POST /guests/rsvp
+"""
+
 import json
 import re
 import boto3
@@ -17,8 +22,8 @@ def lambda_handler(event, context):
     if missing:
         return {'statusCode': 400, 'body': json.dumps({'message': f'Missing required fields: {", ".join(missing)}'})}
 
-    host_email  = body['host_email'].strip()
-    guest_email = body['guest_email'].strip()
+    host_email  = body['host_email'].strip().lower()
+    guest_email = body['guest_email'].strip().lower()
     rsvp        = body['rsvp'].strip()
 
     for addr in [host_email, guest_email]:

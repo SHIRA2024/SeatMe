@@ -1,0 +1,535 @@
+openapi: 3.0.3
+info:
+  title: SeatMe API
+  version: "1.0.0"
+  description: >
+    Serverless REST API for the SeatMe event & seating manager. Every path is
+    served by a single AWS API Gateway HTTP API and backed by one AWS Lambda
+    function (Python 3.12) reading/writing a single Amazon DynamoDB table
+    (`SeatMe`). Each operation notes the numbered product Feature it implements
+    (see docs/features.md and submission/05-features).
+  contact:
+    name: SeatMe project
+  license:
+    name: MIT
+
+servers:
+  - url: https://REPLACE_WITH_YOUR_API_URL
+    description: API Gateway HTTP API base URL (printed at the end of deployment)
+
+tags:
+  - name: Hosts
+    description: Event (host) lifecycle — Features F06-F09
+  - name: Guests
+    description: Guest management & RSVP — Features F11-F15
+  - name: Tables & Seating
+    description: Tables and automatic seating — Features F10, F16
+  - name: Invitations
+    description: SNS email invitations — Feature F17
+  - name: Admin
+    description: Platform administration — Feature F18
+
+paths:
+  /hosts:
+    post:
+      tags: [Hosts]
+      summary: Create a host / event
+      description: "Feature F06. Creates a new event item. Starts with empty guests/tables and default categories."
+      operationId: addHost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHostRequest'
+      responses:
+        '201':
+          description: Host created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Host' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Hosts]
+      summary: Get a host / event summary
+      description: "Feature F07. Returns the event details and a guest_count."
+      operationId: getHost
+      parameters:
+        - $ref: '#/components/parameters/HostEmailQuery'
+      responses:
+        '200':
+          description: Host found
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HostSummary' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Hosts]
+      summary: Update event details / categories
+      description: "Feature F08. Send host_email plus any subset of updatable fields."
+      operationId: updateHost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateHostRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Hosts]
+      summary: Delete a host and all its guests
+      description: "Feature F09."
+      operationId: deleteHost
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: host@example.com }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /guests:
+    post:
+      tags: [Guests]
+      summary: Add a guest
+      description: "Feature F11. New guests start with rsvp='?' and table=null."
+      operationId: addGuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AddGuestRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/OkMessage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Guests]
+      summary: List all guests of a host
+      description: "Feature F12."
+      operationId: getGuests
+      parameters:
+        - $ref: '#/components/parameters/HostEmailQuery'
+      responses:
+        '200':
+          description: Guest map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  guests:
+                    type: object
+                    additionalProperties: { $ref: '#/components/schemas/Guest' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Guests]
+      summary: Update a guest
+      description: "Feature F13. Send host_email + guest_email plus any subset to change. table=null clears the seat."
+      operationId: updateGuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateGuestRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Guests]
+      summary: Remove a guest
+      description: "Feature F14."
+      operationId: deleteGuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host_email, guest_email]
+              properties:
+                host_email: { type: string, format: email }
+                guest_email: { type: string, format: email }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /guests/rsvp:
+    post:
+      tags: [Guests]
+      summary: Record a guest's RSVP (public)
+      description: "Feature F15. Used by the public guest RSVP page; no authentication required."
+      operationId: rsvpGuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RsvpRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tables:
+    post:
+      tags: [Tables & Seating]
+      summary: Define tables and capacities
+      description: "Feature F10. Replaces the host's table configuration."
+      operationId: setTables
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SetTablesRequest' }
+      responses:
+        '200': { $ref: '#/components/responses/OkMessage' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /seating:
+    post:
+      tags: [Tables & Seating]
+      summary: Auto-assign confirmed guests to tables
+      description: "Feature F16. Seats every guest who RSVP'd 'yes', grouping by category."
+      operationId: generateSeating
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [host_email]
+              properties:
+                host_email: { type: string, format: email }
+      responses:
+        '200':
+          description: Seating generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Seating generated }
+                  total_guests_seated: { type: integer, example: 42 }
+                  assignments:
+                    type: object
+                    additionalProperties: { type: integer }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /invitations/send:
+    post:
+      tags: [Invitations]
+      summary: Email RSVP links (one guest or all)
+      description: "Feature F17. Omit guest_email to invite every guest. Delivery is via Amazon SNS."
+      operationId: sendInvitation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SendInvitationRequest' }
+      responses:
+        '200':
+          description: Sent (single) or batch summary (all)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InviteSingleResult'
+                  - $ref: '#/components/schemas/InviteBatchResult'
+        '202':
+          description: Pending — a confirmation email was sent; guest must confirm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: pending }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+  /admin/hosts:
+    get:
+      tags: [Admin]
+      summary: List every event (admin only)
+      description: >
+        Feature F18. Returns a summary of all events across the platform.
+        Requires a Cognito access token in the Authorization header; the Lambda
+        validates the token and checks the caller belongs to the `admin` group.
+      operationId: listHosts
+      security:
+        - cognitoAccessToken: []
+      responses:
+        '200':
+          description: All events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer, example: 3 }
+                  hosts:
+                    type: array
+                    items: { $ref: '#/components/schemas/AdminHostRow' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '500': { $ref: '#/components/responses/ServerError' }
+
+components:
+  securitySchemes:
+    cognitoAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Amazon Cognito access token obtained from USER_PASSWORD_AUTH. The token is
+        verified server-side by the Lambda (GetUser + AdminListGroupsForUser); the
+        caller must be a member of the `admin` group.
+
+  parameters:
+    HostEmailQuery:
+      name: host_email
+      in: query
+      required: true
+      description: Email address that identifies the host/event.
+      schema: { type: string, format: email, example: host@example.com }
+
+  responses:
+    OkMessage:
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string, example: OK }
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Resource already exists / conflicting state
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid access token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated but not an admin
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServerError:
+      description: Internal/service error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string, example: host not found }
+
+    CreateHostRequest:
+      type: object
+      required: [name, email, event_name, event_date, event_location]
+      properties:
+        name: { type: string, example: Jane Cohen }
+        email: { type: string, format: email, example: host@example.com }
+        event_name: { type: string, example: "Jane & Tom's Wedding" }
+        event_date: { type: string, format: date, example: "2026-09-15" }
+        event_location: { type: string, example: Tel Aviv }
+
+    UpdateHostRequest:
+      type: object
+      required: [host_email]
+      properties:
+        host_email: { type: string, format: email }
+        name: { type: string }
+        event_name: { type: string }
+        event_date: { type: string, format: date }
+        event_location: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+          example: [Family, Friends, Work, College]
+
+    Host:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        event_name: { type: string }
+        event_date: { type: string, format: date }
+        event_location: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        tables:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/Table' }
+        guests:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/Guest' }
+
+    HostSummary:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        event_name: { type: string }
+        event_date: { type: string, format: date }
+        event_location: { type: string }
+        categories:
+          type: array
+          items: { type: string }
+        tables:
+          type: object
+          additionalProperties: { $ref: '#/components/schemas/Table' }
+        guest_count: { type: integer, example: 12 }
+
+    Table:
+      type: object
+      properties:
+        capacity:
+          type: string
+          description: Positive integer returned as a string (DynamoDB Decimal serialized as string).
+          example: "10"
+
+    Guest:
+      type: object
+      properties:
+        name: { type: string, example: Daniel Levi }
+        category: { type: string, example: Family }
+        count:
+          type: string
+          description: Party size, serialized as a string.
+          example: "2"
+        rsvp:
+          type: string
+          enum: [yes, "no", "?"]
+          example: "yes"
+        table:
+          type: string
+          nullable: true
+          description: Assigned table number (string) or null when unseated.
+          example: "1"
+        song:
+          type: string
+          nullable: true
+          example: Dancing Queen
+
+    AddGuestRequest:
+      type: object
+      required: [host_email, name, guest_email]
+      properties:
+        host_email: { type: string, format: email }
+        name: { type: string, example: Daniel Levi }
+        guest_email: { type: string, format: email, example: daniel@example.com }
+        category: { type: string, example: Family }
+        count: { type: integer, default: 1, example: 2 }
+
+    UpdateGuestRequest:
+      type: object
+      required: [host_email, guest_email]
+      properties:
+        host_email: { type: string, format: email }
+        guest_email: { type: string, format: email }
+        name: { type: string }
+        category: { type: string }
+        rsvp: { type: string, enum: [yes, "no", "?"] }
+        count: { type: integer }
+        table:
+          type: integer
+          nullable: true
+          description: Table number to assign, or null to clear the assignment.
+
+    RsvpRequest:
+      type: object
+      required: [host_email, guest_email, rsvp]
+      properties:
+        host_email: { type: string, format: email }
+        guest_email: { type: string, format: email }
+        rsvp: { type: string, enum: [yes, "no", "?"], example: "yes" }
+        count: { type: integer, example: 2 }
+        song: { type: string, example: Dancing Queen }
+
+    SetTablesRequest:
+      type: object
+      required: [host_email, tables]
+      properties:
+        host_email: { type: string, format: email }
+        tables:
+          type: object
+          minProperties: 1
+          additionalProperties:
+            type: object
+            required: [capacity]
+            properties:
+              capacity: { type: integer, minimum: 1, example: 10 }
+
+    SendInvitationRequest:
+      type: object
+      required: [host_email, site_url]
+      properties:
+        host_email: { type: string, format: email }
+        site_url:
+          type: string
+          format: uri
+          example: https://seatme-211125406308.s3-website-us-east-1.amazonaws.com
+        guest_email:
+          type: string
+          format: email
+          description: Omit to invite every guest of the host.
+        message: { type: string, example: Optional custom note }
+
+    InviteSingleResult:
+      type: object
+      properties:
+        status: { type: string, enum: [sent, pending], example: sent }
+
+    InviteBatchResult:
+      type: object
+      properties:
+        message: { type: string, example: "12 sent, 38 awaiting confirmation" }
+        sent:
+          type: array
+          items: { type: string, format: email }
+        pending:
+          type: array
+          items: { type: string, format: email }
+        failed:
+          type: array
+          items: { type: string, format: email }
+
+    AdminHostRow:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        name: { type: string }
+        event_name: { type: string }
+        event_date: { type: string, format: date }
+        event_location: { type: string }
+        guest_count: { type: integer, example: 12 }

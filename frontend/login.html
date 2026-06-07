@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!-- SeatMe | Features: F03 (Sign in), F18 (route admins to admin portal) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log in – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card container-sm" style="width:100%;">
+      <div class="auth-logo">
+        <span class="brand-mark">⚡</span>
+        <div style="text-align:center;">
+          <div class="auth-title">Welcome back</div>
+          <div class="auth-sub">Sign in to manage your event</div>
+        </div>
+      </div>
+
+      <form id="loginForm" onsubmit="return doLogin(event)">
+        <div class="field">
+          <label for="email">Email address</label>
+          <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" type="password" id="password" placeholder="Your password" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn-primary btn-block" id="submitBtn" type="submit">Sign in</button>
+      </form>
+
+      <p style="text-align:center;margin-top:14px;">
+        <a href="#" onclick="goForgot(event)">Forgot password?</a>
+      </p>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+
+      <p class="auth-sub" style="text-align:center;">
+        New to SeatMe? <a href="signup.html">Create an account</a>
+      </p>
+      <p style="text-align:center;margin-top:6px;"><a href="index.html">← Back to home</a></p>
+    </div>
+  </div>
+
+  <script>
+    async function doLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      if (!emailValid(email)) { toast('Please enter a valid email address', 'err'); return false; }
+      if (!password) { toast('Please enter your password', 'err'); return false; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        await Auth.signIn(email, password);
+        // Admins go to the oversight portal; everyone else to their own event.
+        if (Session.isAdmin()) {
+          window.location.href = 'admin.html';
+          return false;
+        }
+        // Authenticated — open the event if it exists, else set one up
+        const res = await Hosts.get(email);
+        if (res.ok && res.data.email) {
+          sessionStorage.setItem('host_cache', JSON.stringify(res.data));
+          window.location.href = 'host.html';
+        } else {
+          window.location.href = 'create-host.html';
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+        if (err.code === 'UserNotConfirmedException') {
+          try { await Auth.resend(email); } catch (_) {}
+          toast('Please confirm your email — we sent a new code.', 'err');
+          setTimeout(() => (window.location.href = 'signup.html?mode=confirm&email=' + encodeURIComponent(email)), 1300);
+        } else if (err.code === 'UserNotFoundException' || err.code === 'NotAuthorizedException') {
+          toast('Incorrect email or password', 'err');
+        } else {
+          toast(err.message || 'Sign-in failed', 'err');
+        }
+      }
+      return false;
+    }
+
+    function goForgot(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      window.location.href = 'forgot.html' + (email ? ('?email=' + encodeURIComponent(email)) : '');
+    }
+  </script>
+</body>
+</html>

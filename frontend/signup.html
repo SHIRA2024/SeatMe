@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!-- SeatMe | Features: F01 (Sign up), F02 (Confirm email & resend code) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create account – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card container-sm" style="width:100%;">
+      <div class="auth-logo">
+        <span class="brand-mark">⚡</span>
+        <div style="text-align:center;">
+          <div class="auth-title">Create your account</div>
+          <div class="auth-sub">Sign up to start planning your event</div>
+        </div>
+      </div>
+
+      <!-- Step 1: sign up -->
+      <div id="formView">
+        <form onsubmit="return doSignup(event)">
+          <div class="field">
+            <label for="email">Email address</label>
+            <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input class="input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+            <div class="hint">At least 8 characters</div>
+          </div>
+          <div class="field">
+            <label for="password2">Confirm password</label>
+            <input class="input" type="password" id="password2" placeholder="Re-enter your password" autocomplete="new-password" required />
+          </div>
+          <button class="btn btn-primary btn-block" id="signupBtn" type="submit">Create account</button>
+        </form>
+        <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+        <p class="auth-sub" style="text-align:center;">
+          Already have an account? <a href="login.html">Sign in</a>
+        </p>
+      </div>
+
+      <!-- Step 2: confirm email code -->
+      <div id="confirmView" style="display:none;">
+        <p class="auth-sub" style="margin-bottom:16px;">
+          We emailed a 6-digit code to <strong id="confirmEmail"></strong>. Enter it below to verify your account.
+        </p>
+        <form onsubmit="return doConfirm(event)">
+          <div class="field">
+            <label for="code">Verification code</label>
+            <input class="input" id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required />
+          </div>
+          <button class="btn btn-primary btn-block" id="confirmBtn" type="submit">Confirm &amp; continue</button>
+        </form>
+        <p style="text-align:center;margin-top:14px;">
+          <a href="#" onclick="resendCode(event)">Resend code</a>
+        </p>
+      </div>
+
+      <p style="text-align:center;margin-top:6px;"><a href="index.html">← Back to home</a></p>
+    </div>
+  </div>
+
+  <script>
+    let pendingEmail = '';
+    let pendingPassword = '';
+
+    // If redirected here to confirm an unverified account
+    (function () {
+      const p = new URLSearchParams(location.search);
+      if (p.get('mode') === 'confirm' && p.get('email')) {
+        pendingEmail = p.get('email').trim().toLowerCase();
+        showConfirm();
+      }
+    })();
+
+    function showConfirm() {
+      document.getElementById('confirmEmail').textContent = pendingEmail;
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('confirmView').style.display = 'block';
+    }
+
+    async function doSignup(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const pw  = document.getElementById('password').value;
+      const pw2 = document.getElementById('password2').value;
+      if (!emailValid(email)) { toast('Please enter a valid email address', 'err'); return false; }
+      if (pw.length < 8) { toast('Password must be at least 8 characters', 'err'); return false; }
+      if (pw !== pw2) { toast('Passwords do not match', 'err'); return false; }
+
+      const btn = document.getElementById('signupBtn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+      try {
+        await Auth.signUp(email, pw);
+        pendingEmail = email;
+        pendingPassword = pw;
+        toast('Account created — check your email for a code ✓');
+        showConfirm();
+      } catch (err) {
+        if (err.code === 'UsernameExistsException') {
+          toast('That email already has an account. Try signing in.', 'err');
+          setTimeout(() => (window.location.href = 'login.html'), 1400);
+        } else {
+          toast(err.message || 'Could not create account', 'err');
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Create account';
+      }
+      return false;
+    }
+
+    async function doConfirm(e) {
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim();
+      if (!code) { toast('Enter the code from your email', 'err'); return false; }
+
+      const btn = document.getElementById('confirmBtn');
+      btn.disabled = true; btn.textContent = 'Confirming…';
+      try {
+        await Auth.confirm(pendingEmail, code);
+        // Fresh sign-up: we still have the password, so sign in automatically
+        if (pendingPassword) {
+          await Auth.signIn(pendingEmail, pendingPassword);
+          const res = await Hosts.get(pendingEmail);
+          if (res.ok && res.data.email) {
+            sessionStorage.setItem('host_cache', JSON.stringify(res.data));
+            window.location.href = 'host.html';
+          } else {
+            window.location.href = 'create-host.html';
+          }
+        } else {
+          toast('Email confirmed ✓ Please sign in.');
+          setTimeout(() => (window.location.href = 'login.html'), 1000);
+        }
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Confirm & continue';
+        toast(err.message || 'Invalid or expired code', 'err');
+      }
+      return false;
+    }
+
+    async function resendCode(e) {
+      e.preventDefault();
+      if (!pendingEmail) { toast('Enter your email first', 'err'); return; }
+      try { await Auth.resend(pendingEmail); toast('New code sent ✓'); }
+      catch (err) { toast(err.message || 'Could not resend code', 'err'); }
+    }
+  </script>
+</body>
+</html>

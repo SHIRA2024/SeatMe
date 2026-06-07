@@ -1,192 +1,51 @@
-﻿<!DOCTYPE html>
-<html lang="he" dir="rtl">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=1200">
-<title>SeatMe – כל המסכים</title>
-<link rel="stylesheet" href="shared.css">
-<style>
-body { background:#111827; padding:0; display:block; }
-.index-shell { min-height:100vh; display:flex; flex-direction:column; }
-
-.index-topbar {
-  background:#1F2937; border-bottom:1px solid #374151;
-  padding:16px 40px; display:flex; align-items:center; justify-content:space-between;
-}
-.index-logo { display:flex; align-items:center; gap:12px; }
-.index-logo .ico { width:40px; height:40px; background:var(--orange); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
-.index-logo .name { font-size:22px; font-weight:800; color:white; }
-.index-logo .version { font-size:12px; color:#6B7280; background:#374151; padding:3px 10px; border-radius:20px; }
-
-.index-content { flex:1; padding:40px 40px 60px; }
-.index-title { font-size:32px; font-weight:900; color:white; margin-bottom:6px; }
-.index-sub { font-size:15px; color:#9CA3AF; margin-bottom:40px; }
-
-.section-header { font-size:13px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-.section-header::after { content:''; flex:1; height:1px; background:#374151; }
-
-.screens-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:16px; margin-bottom:40px; }
-
-.screen-card {
-  background:#1F2937; border:1px solid #374151; border-radius:14px;
-  padding:20px; cursor:pointer; text-decoration:none;
-  transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-  display:flex; flex-direction:column; gap:12px;
-}
-.screen-card:hover { transform:translateY(-3px); border-color:var(--orange); box-shadow:0 8px 24px rgba(232,145,58,0.2); }
-.screen-icon { width:48px; height:48px; border-radius:12px; background:var(--orange); display:flex; align-items:center; justify-content:center; font-size:22px; }
-.screen-icon.guest { background:#1E3A5F; }
-.screen-num { font-size:11px; font-weight:600; color:#6B7280; }
-.screen-name { font-size:15px; font-weight:700; color:white; }
-.screen-desc { font-size:12px; color:#6B7280; line-height:1.4; }
-
-.footer { text-align:center; padding:20px; color:#374151; font-size:13px; border-top:1px solid #374151; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeatMe – Event Seating Made Simple</title>
+  <link rel="stylesheet" href="app.css" />
 </head>
 <body>
-<div class="index-shell">
-  <div class="index-topbar">
-    <div class="index-logo">
-      <div class="ico">⚡</div>
-      <div class="name">SeatMe</div>
-      <div class="version">Desktop v2.0</div>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">⚡</span> SeatMe</a>
+      <div class="appbar-actions">
+        <a class="btn btn-primary btn-sm" href="login.html">Log in</a>
+      </div>
     </div>
-    <div style="color:#9CA3AF;font-size:13px">13 מסכים · לחץ לפתיחה</div>
-  </div>
+  </header>
 
-  <div class="index-content">
-    <div class="index-title">כל מסכי האפליקציה</div>
-    <div class="index-sub">בחרו מסך לצפייה – כל קבצי ה-HTML מוכנים לעריכה ב-VSCode</div>
+  <main>
+    <section class="hero">
+      <div class="hero-mark">🪑</div>
+      <h1>Plan your event seating in minutes</h1>
+      <p class="lead">
+        SeatMe is a cloud-based event manager that helps hosts collect RSVPs,
+        organize guests, and generate smart seating arrangements — all in one place.
+      </p>
+      <a class="btn btn-primary" href="login.html" style="padding:13px 28px;font-size:15px;">
+        Get started →
+      </a>
 
-    <!-- Guest Screens -->
-    <div class="section-header">👤 מסכי אורח</div>
-    <div class="screens-grid">
-      <a class="screen-card" href="SCREEN~1.HTM" target="_blank">
-        <div class="screen-icon guest" style="font-size:22px">🎉</div>
-        <div><div class="screen-num">מסך 1</div><div class="screen-name">פרטי האירוע</div></div>
-        <div class="screen-desc">הזמנה עם תאריך, שעה ומיקום – hero image + כרטיסי מידע</div>
-      </a>
-      <a class="screen-card" href="SCREEN~2.HTM" target="_blank">
-        <div class="screen-icon guest" style="font-size:22px">✅</div>
-        <div><div class="screen-num">מסך 2</div><div class="screen-name">אישור הגעה</div></div>
-        <div class="screen-desc">RSVP – מספר אורחים, שמות, בקשת שיר</div>
-      </a>
-      <a class="screen-card" href="SCREEN~3.HTM" target="_blank">
-        <div class="screen-icon guest" style="font-size:22px">📱</div>
-        <div><div class="screen-num">מסך 3</div><div class="screen-name">כרטיס כניסה</div></div>
-        <div class="screen-desc">קוד QR אישי + כרטיס כניסה בעיצוב ticket</div>
-      </a>
-      <a class="screen-card" href="screen4-edit-rsvp.html" target="_blank">
-        <div class="screen-icon guest" style="font-size:22px">✏️</div>
-        <div><div class="screen-num">מסך 4</div><div class="screen-name">עריכת RSVP</div></div>
-        <div class="screen-desc">עדכון פרטי הגעה + ביטול</div>
-      </a>
-      <a class="screen-card" href="SC6A44~1.HTM" target="_blank">
-        <div class="screen-icon guest" style="font-size:22px">💺</div>
-        <div><div class="screen-num">מסך 5</div><div class="screen-name">המושב שלי</div></div>
-        <div class="screen-desc">מיקום שולחן + מפת האולם מלאה</div>
-      </a>
-    </div>
-
-    <!-- Organizer Screens -->
-    <div class="section-header">🎩 מסכי מארגן</div>
-    <div class="screens-grid">
-      <a class="screen-card" href="SC2B1E~1.HTM" target="_blank">
-        <div class="screen-icon">📊</div>
-        <div><div class="screen-num">מסך 6</div><div class="screen-name">דשבורד</div></div>
-        <div class="screen-desc">סטטיסטיקות + פעילות אחרונה + CTA לישיבה</div>
-      </a>
-      <a class="screen-card" href="SC9376~1.HTM" target="_blank">
-        <div class="screen-icon">👥</div>
-        <div><div class="screen-num">מסך 7</div><div class="screen-name">רשימת מוזמנים</div></div>
-        <div class="screen-desc">טבלה עם פילטרים, חיפוש ופעולות</div>
-      </a>
-      <a class="screen-card" href="SCE6A5~1.HTM" target="_blank">
-        <div class="screen-icon">🧑</div>
-        <div><div class="screen-num">מסך 8</div><div class="screen-name">פרטי אורח</div></div>
-        <div class="screen-desc">פרופיל, RSVP, שיר, ישיבה וקוד כניסה</div>
-      </a>
-      <a class="screen-card" href="SC8099~1.HTM" target="_blank">
-        <div class="screen-icon">🪑</div>
-        <div><div class="screen-num">מסך 9</div><div class="screen-name">עורך ישיבה</div></div>
-        <div class="screen-desc">grid שולחנות + panel שיוך אורחים</div>
-      </a>
-      <a class="screen-card" href="SC5DD8~1.HTM" target="_blank">
-        <div class="screen-icon">🗺️</div>
-        <div><div class="screen-num">מסך 10</div><div class="screen-name">תצוגת מפה</div></div>
-        <div class="screen-desc">drag & drop אורחים על גבי מפת האולם</div>
-      </a>
-      <a class="screen-card" href="SC1782~1.HTM" target="_blank">
-        <div class="screen-icon">📌</div>
-        <div><div class="screen-num">מסך 11</div><div class="screen-name">שיוך מושב</div></div>
-        <div class="screen-desc">מודאל שיוך אורח לשולחן</div>
-      </a>
-      <a class="screen-card" href="SC72CE~1.HTM" target="_blank">
-        <div class="screen-icon">📤</div>
-        <div><div class="screen-num">מסך 12</div><div class="screen-name">יצוא ושיתוף</div></div>
-        <div class="screen-desc">PNG / CSV / PDF + קישור + מייל</div>
-      </a>
-      <a class="screen-card" href="SCE5BC~1.HTM" target="_blank">
-        <div class="screen-icon">👁️</div>
-        <div><div class="screen-num">מסך 13</div><div class="screen-name">תצוגת אורח</div></div>
-        <div class="screen-desc">תצוגה מקדימה של מה שהאורח רואה</div>
-      </a>
-    </div>
-  </div>
-
-    <!-- New Feature Screens -->
-    <div class="section-header" style="margin-top:12px">⚡ פונקציות ניהול</div>
-    <div class="screens-grid">
-      <a class="screen-card" href="SC2133~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">➕</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">הוספת אורח</div></div>
-        <div class="screen-desc">טופס הוספה עם תצוגה מקדימה חיה</div>
-      </a>
-      <a class="screen-card" href="SC2FE1~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">✏️</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">עריכת אורח</div></div>
-        <div class="screen-desc">עריכה + RSVP + מחיקה עם אישור</div>
-      </a>
-      <a class="screen-card" href="SCB0EE~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">📨</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">שליחת הזמנה</div></div>
-        <div class="screen-desc">WhatsApp / SMS / אימייל + תצוגת טלפון</div>
-      </a>
-      <a class="screen-card" href="SC6AE5~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">🪑</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">שליחת סידורי שולחנות</div></div>
-        <div class="screen-desc">בחר אורחים + שלח בלק + אנימציית שליחה</div>
-      </a>
-    </div>
-  </div>
-
-    <!-- Missing Screens -->
-    <div class="section-header" style="margin-top:12px">🧩 מסכים חסרים שהושלמו</div>
-    <div class="screens-grid">
-      <a class="screen-card" href="SCE754~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">⚙️</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">הגדרות אירוע</div></div>
-        <div class="screen-desc">שם, תאריך, מקום, קיבולת, תמונת שער</div>
-      </a>
-      <a class="screen-card" href="SC2D24~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">📂</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">ייבוא אורחים</div></div>
-        <div class="screen-desc">CSV/Excel · מיפוי עמודות · תצוגה מקדימה</div>
-      </a>
-      <a class="screen-card" href="SC61AB~1.HTM" target="_blank" style="border-color:#E8913A">
-        <div class="screen-icon">🪑</div>
-        <div><div class="screen-num" style="color:#E8913A">חדש</div><div class="screen-name">ניהול שולחנות</div></div>
-        <div class="screen-desc">הגדר שולחנות, קיבולת, סוג, אזור</div>
-      </a>
-      <a class="screen-card" href="screen-invite-landing.html" target="_blank" style="border-color:#43A047">
-        <div class="screen-icon">💌</div>
-        <div><div class="screen-num" style="color:#43A047">אורח</div><div class="screen-name">דף נחיתה להזמנה</div></div>
-        <div class="screen-desc">דף אורח עם אישור הגעה מובנה</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="footer">SeatMe Desktop · 21 מסכים HTML + shared.css + _shell.js</div>
-</div>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-ic">✉️</div>
+          <h3>Invitations &amp; RSVP</h3>
+          <p>Send email invitations and let guests confirm attendance with a single click.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-ic">👥</div>
+          <h3>Guest management</h3>
+          <p>Add guests, group them by category, and track how many people are coming.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-ic">🪄</div>
+          <h3>Automatic seating</h3>
+          <p>Generate a full seating plan based on your tables and guest groups.</p>
+        </div>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

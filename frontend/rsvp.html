@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!-- SeatMe | Feature: F15 (Guest RSVP via public link) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your invitation – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">⚡</span> SeatMe</a>
+    </div>
+  </header>
+
+  <main class="container container-sm" style="margin-top:24px;">
+    <div id="content"><div class="empty">Loading your invitation…</div></div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const HOST  = (params.get('host')  || '').trim().toLowerCase();
+    const GUEST = (params.get('guest') || '').trim().toLowerCase();
+    let host = null;
+    let guest = null;
+    let selectedRsvp = '?';
+
+    function showMessage(html) {
+      document.getElementById('content').innerHTML = `<div class="card"><div class="empty">${html}</div></div>`;
+    }
+
+    function statusBadge(r) {
+      if (r === 'yes') return '<span class="badge badge-yes">You\'re coming</span>';
+      if (r === 'no')  return '<span class="badge badge-no">Not coming</span>';
+      return '<span class="badge badge-maybe">Awaiting your reply</span>';
+    }
+
+    async function load() {
+      if (!HOST || !GUEST) {
+        showMessage('This invitation link is missing information.<br /><a href="index.html">Go to SeatMe</a>');
+        return;
+      }
+      const [hRes, gRes] = await Promise.all([Hosts.get(HOST), Guests.list(HOST)]);
+      if (!hRes.ok) { showMessage(escapeHtml(hRes.data.message || 'We could not find this event.')); return; }
+      host = hRes.data;
+      guest = (gRes.ok ? (gRes.data.guests || {}) : {})[GUEST];
+      if (!guest) { showMessage('We could not find your invitation. Please check your link.'); return; }
+      selectedRsvp = guest.rsvp || '?';
+      render();
+    }
+
+    function render() {
+      const eventMeta = [
+        host.event_date ? '📅 ' + escapeHtml(host.event_date) : '',
+        host.event_location ? '📍 ' + escapeHtml(host.event_location) : '',
+      ].filter(Boolean).join('&nbsp;&nbsp;·&nbsp;&nbsp;');
+
+      const seated = guest.table != null && String(guest.table) !== '';
+      const tableCard = seated
+        ? `<div class="stat-row" style="margin-top:14px;">
+             <div class="stat"><div class="stat-num">#${escapeHtml(guest.table)}</div><div class="stat-label">Your table</div></div>
+           </div>`
+        : '';
+
+      document.getElementById('content').innerHTML = `
+        <div class="card" style="text-align:center;">
+          <div class="hero-mark" style="width:56px;height:56px;font-size:28px;border-radius:15px;margin:0 auto 14px;">🎉</div>
+          <h1 style="font-size:24px;font-weight:800;margin-bottom:6px;">${escapeHtml(host.event_name || "You're invited!")}</h1>
+          <p class="muted">${eventMeta}</p>
+          ${host.name ? `<p class="muted" style="margin-top:4px;">Hosted by ${escapeHtml(host.name)}</p>` : ''}
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Hi ${escapeHtml(guest.name || GUEST)} 👋</div>
+              <div class="card-sub">${escapeHtml(GUEST)}</div>
+            </div>
+            ${statusBadge(guest.rsvp)}
+          </div>
+
+          <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px;">Will you attend?</label>
+          <div class="rsvp-choice">
+            <button type="button" class="btn rsvp-btn" id="rsvpYes" onclick="choose('yes')">✓ I'll be there</button>
+            <button type="button" class="btn rsvp-btn" id="rsvpNo" onclick="choose('no')">✗ Can't make it</button>
+          </div>
+
+          <div id="details" style="margin-top:18px;">
+            <div class="field">
+              <label>How many of you are coming?</label>
+              <input class="input" type="number" min="1" id="r_count" value="${escapeHtml(guest.count || 1)}" />
+              <div class="hint">Including yourself</div>
+            </div>
+            <div class="field">
+              <label>Song request <span class="muted">(optional)</span></label>
+              <input class="input" id="r_song" value="${escapeHtml(guest.song || '')}" placeholder="A song you'd love to hear" />
+            </div>
+          </div>
+
+          ${tableCard}
+
+          <div class="form-actions" style="margin-top:16px;">
+            <button class="btn btn-primary btn-block" type="button" onclick="submitRsvp()">Save my response</button>
+          </div>
+        </div>`;
+      updateChoice();
+    }
+
+    function choose(r) { selectedRsvp = r; updateChoice(); }
+
+    function updateChoice() {
+      const yes = document.getElementById('rsvpYes');
+      const no  = document.getElementById('rsvpNo');
+      if (!yes || !no) return;
+      yes.className = 'btn rsvp-btn ' + (selectedRsvp === 'yes' ? 'rsvp-btn-yes' : 'btn-secondary');
+      no.className  = 'btn rsvp-btn ' + (selectedRsvp === 'no'  ? 'rsvp-btn-no'  : 'btn-secondary');
+      const details = document.getElementById('details');
+      if (details) details.style.display = selectedRsvp === 'no' ? 'none' : 'block';
+    }
+
+    async function submitRsvp() {
+      if (selectedRsvp !== 'yes' && selectedRsvp !== 'no') {
+        toast('Please choose whether you can attend', 'err');
+        return;
+      }
+      const payload = { host_email: HOST, guest_email: GUEST, rsvp: selectedRsvp };
+      if (selectedRsvp === 'yes') {
+        payload.count = parseInt(document.getElementById('r_count').value) || 1;
+        const song = document.getElementById('r_song').value.trim();
+        if (song) payload.song = song;
+      }
+      const res = await Guests.rsvp(payload);
+      if (res.ok) {
+        guest.rsvp = selectedRsvp;
+        if (payload.count) guest.count = payload.count;
+        if (payload.song)  guest.song = payload.song;
+        toast('Thank you! Your response was saved ✓');
+        setTimeout(render, 500);
+      } else {
+        toast(res.data.message || 'Could not save your response', 'err');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

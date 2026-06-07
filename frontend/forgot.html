@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- SeatMe | Feature: F04 (Reset forgotten password) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset password – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card container-sm" style="width:100%;">
+      <div class="auth-logo">
+        <span class="brand-mark">⚡</span>
+        <div style="text-align:center;">
+          <div class="auth-title">Reset your password</div>
+          <div class="auth-sub">We'll email you a code to set a new one</div>
+        </div>
+      </div>
+
+      <!-- Step 1: request a reset code -->
+      <div id="requestView">
+        <form onsubmit="return doRequest(event)">
+          <div class="field">
+            <label for="email">Email address</label>
+            <input class="input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <button class="btn btn-primary btn-block" id="requestBtn" type="submit">Send reset code</button>
+        </form>
+      </div>
+
+      <!-- Step 2: enter code + new password -->
+      <div id="resetView" style="display:none;">
+        <p class="auth-sub" style="margin-bottom:16px;">
+          Enter the code we emailed to <strong id="resetEmailLabel"></strong> and choose a new password.
+        </p>
+        <form onsubmit="return doReset(event)">
+          <div class="field">
+            <label for="code">Verification code</label>
+            <input class="input" id="code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" required />
+          </div>
+          <div class="field">
+            <label for="password">New password</label>
+            <input class="input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+            <div class="hint">At least 8 characters</div>
+          </div>
+          <button class="btn btn-primary btn-block" id="resetBtn" type="submit">Set new password</button>
+        </form>
+        <p style="text-align:center;margin-top:14px;">
+          <a href="#" onclick="resendReset(event)">Resend code</a>
+        </p>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+      <p class="auth-sub" style="text-align:center;">
+        Remembered it? <a href="login.html">Back to sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let resetEmail = '';
+
+    (function () {
+      const p = new URLSearchParams(location.search);
+      if (p.get('email')) {
+        document.getElementById('email').value = p.get('email').trim().toLowerCase();
+      }
+    })();
+
+    function showReset() {
+      document.getElementById('resetEmailLabel').textContent = resetEmail;
+      document.getElementById('requestView').style.display = 'none';
+      document.getElementById('resetView').style.display = 'block';
+    }
+
+    async function doRequest(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      if (!emailValid(email)) { toast('Please enter a valid email address', 'err'); return false; }
+
+      const btn = document.getElementById('requestBtn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        await Auth.forgotPassword(email);
+        resetEmail = email;
+        toast('Reset code sent ✓ Check your email.');
+        showReset();
+      } catch (err) {
+        if (err.code === 'UserNotFoundException') {
+          toast('No account found for that email', 'err');
+        } else {
+          toast(err.message || 'Could not send reset code', 'err');
+        }
+      } finally {
+        btn.disabled = false; btn.textContent = 'Send reset code';
+      }
+      return false;
+    }
+
+    async function doReset(e) {
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim();
+      const pw   = document.getElementById('password').value;
+      if (!code) { toast('Enter the code from your email', 'err'); return false; }
+      if (pw.length < 8) { toast('Password must be at least 8 characters', 'err'); return false; }
+
+      const btn = document.getElementById('resetBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await Auth.confirmForgotPassword(resetEmail, code, pw);
+        toast('Password updated ✓ Please sign in.');
+        setTimeout(() => (window.location.href = 'login.html?email=' + encodeURIComponent(resetEmail)), 1100);
+      } catch (err) {
+        btn.disabled = false; btn.textContent = 'Set new password';
+        toast(err.message || 'Invalid or expired code', 'err');
+      }
+      return false;
+    }
+
+    async function resendReset(e) {
+      e.preventDefault();
+      if (!resetEmail) { return; }
+      try { await Auth.forgotPassword(resetEmail); toast('New code sent ✓'); }
+      catch (err) { toast(err.message || 'Could not resend code', 'err'); }
+    }
+  </script>
+</body>
+</html>

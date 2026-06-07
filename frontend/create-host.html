@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- SeatMe | Feature: F06 (Create event) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create event – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <div class="center-screen">
+    <div class="card container-sm" style="width:100%;">
+      <a class="back-link" href="login.html">← Back</a>
+      <div class="auth-title">Create your event</div>
+      <div class="auth-sub" style="margin-bottom:18px;">
+        You don't have an event yet. Let's set one up.
+      </div>
+
+      <form id="hostForm" onsubmit="return createHost(event)">
+        <div class="field">
+          <label for="name">Your name</label>
+          <input class="input" id="name" placeholder="Jane Cohen" required />
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input class="input" type="email" id="email" autocomplete="off" readonly />
+          <div class="hint">From your account</div>
+        </div>
+        <div class="field">
+          <label for="event_name">Event name</label>
+          <input class="input" id="event_name" placeholder="Jane &amp; Tom's Wedding" required />
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="event_date">Event date</label>
+            <input class="input" type="date" id="event_date" required />
+          </div>
+          <div class="field">
+            <label for="event_location">Location</label>
+            <input class="input" id="event_location" placeholder="Tel Aviv" required />
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" id="submitBtn" type="submit">Create event</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Must be signed in; email comes from the Cognito session
+    const HOST = requireHost();
+    if (HOST) document.getElementById('email').value = HOST;
+
+    async function createHost(e) {
+      e.preventDefault();
+      const host = {
+        name: document.getElementById('name').value.trim(),
+        email: HOST,
+        event_name: document.getElementById('event_name').value.trim(),
+        event_date: document.getElementById('event_date').value,
+        event_location: document.getElementById('event_location').value.trim(),
+      };
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating…';
+
+      const res = await Hosts.create(host);
+
+      btn.disabled = false;
+      btn.textContent = 'Create event';
+
+      if (res.ok) {
+        sessionStorage.removeItem('host_cache');
+        toast('Event created ✓');
+        setTimeout(() => (window.location.href = 'host.html'), 600);
+      } else if (res.status === 409) {
+        // Already have an event for this account — just open it
+        toast('You already have an event. Opening it…');
+        setTimeout(() => (window.location.href = 'host.html'), 800);
+      } else {
+        toast(res.data.message || 'Could not create event', 'err');
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

@@ -1,262 +1,154 @@
-# SeatMe Installation Guide
+# Installation & Deployment
 
-## Project Overview
+SeatMe deploys to AWS with a single command. It is designed for the **AWS Academy
+Learner Lab** but works in any AWS account whose execution role can manage DynamoDB,
+Lambda, API Gateway, Cognito, SNS, and S3.
 
-SeatMe is a cloud-based serverless event management system designed to help event hosts manage guests, RSVP responses, seating arrangements, and invitation delivery.
+## Prerequisites
 
-The system is built using AWS cloud services and includes:
-
-* AWS Lambda backend
-* Amazon DynamoDB database
-* Amazon API Gateway
-* Amazon SNS email notifications
-* Amazon S3 frontend hosting
-
----
-
-## Current Project Status
-
-At the current development stage, the project includes:
-
-* DynamoDB single-table database (host-centric design with nested guests and tables)
-* 12 Lambda functions with input validation
-* Automated AWS deployment script
-* API Gateway integration
-* S3-hosted frontend
-* SNS-based invitation delivery
-* RSVP management
-* Greedy seating arrangement algorithm (groups guests by category)
-* Seed data and testing scripts
-* Project documentation
-* GitHub repository
+- An AWS account (or an active **AWS Academy Learner Lab**), region **`us-east-1`**.
+- **AWS CloudShell** (recommended) — it already has Python 3.12, `boto3`, and the AWS CLI
+  with credentials configured.
+- If running locally instead: Python 3.12, the AWS CLI configured with credentials, and
+  the dependency installed:
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 ---
 
-## Technologies Used
+## Option A — one-command deploy (recommended)
 
-### AWS Services
-
-* Amazon DynamoDB
-* AWS Lambda
-* Amazon API Gateway
-* Amazon SNS
-* Amazon S3
-
-### Programming Languages
-
-* Python 3.12
-* HTML
-* CSS
-* JavaScript
-
----
-
-## DynamoDB Architecture
-
-The project uses a host-centric single-table design.
-
-Table name: **SeatMe**
-
-Partition key:
-
-* `email` (String) — Host email
-
-Each host record contains:
-
-| Field          | Description      |
-| -------------- | ---------------- |
-| email          | Host email       |
-| name           | Host name        |
-| event_name     | Event name       |
-| event_date     | Event date       |
-| event_location | Event location   |
-| guests         | Nested guest map |
-| tables         | Nested table map |
-
-Each guest contains:
-
-| Field    | Description        |
-| -------- | ------------------ |
-| name     | Guest name         |
-| rsvp     | yes / no / ?       |
-| table    | Assigned table     |
-| category | Guest category     |
-| count    | Number of invitees |
-
----
-
-## Lambda Functions
-
-The project includes 12 Lambda functions:
-
-| Function         | Description                                         |
-| ---------------- | --------------------------------------------------- |
-| add_host         | Create host                                         |
-| get_host         | Retrieve host                                       |
-| update_host      | Update host                                         |
-| delete_host      | Delete host                                         |
-| add_guest        | Add guest                                           |
-| get_guests       | Retrieve guests                                     |
-| update_guest     | Update guest                                        |
-| delete_guest     | Delete guest                                        |
-| rsvp_guest       | Update RSVP                                         |
-| set_tables       | Configure tables                                    |
-| generate_seating | Generate seating arrangement                        |
-| send_invitation  | Send invitation emails and manage SNS subscriptions |
-
----
-
-## Invitation Flow
-
-The system currently supports invitation delivery through **Email only**.
-
-Flow:
-
-1. Host adds a guest with a real email address.
-2. Host clicks **Send Invitation**.
-3. If this is the guest's first invitation, AWS SNS sends a subscription confirmation email.
-4. Guest confirms the subscription.
-5. Host clicks **Send Invitation** again.
-6. The actual invitation email is delivered.
-
-Notes:
-
-* Confirmation emails may arrive in Spam.
-* WhatsApp and SMS are not currently supported.
-* SNS is used for demonstration purposes in AWS Academy.
-
----
-
-## Setup Instructions
-
-### Step 1 – Start AWS Academy Learner Lab
-
-1. Open AWS Academy Learner Lab.
-2. Click **Start Lab**.
-3. Wait until AWS becomes available.
-4. Open AWS Console.
-
----
-
-### Step 2 – Open CloudShell
-
-Open CloudShell from the AWS Console.
-
----
-
-### Step 3 – Create DynamoDB Table
-
-Run:
+From the **repository root**:
 
 ```bash
-python3 create_single_table.py
+python3 redeploy_all.py --seed
 ```
 
-This creates the SeatMe DynamoDB table.
+This runs the full pipeline and prints the **API URL** and **Website URL** at the end:
+
+1. Create the DynamoDB table `SeatMe`.
+2. Deploy the 13 API Lambda functions (plus the Cognito Post-Confirmation trigger) and
+   wire up the HTTP API Gateway.
+3. (`--seed`) Load demo data — one host and 50 guests.
+4. Create the Cognito user pool + app client + `host`/`admin` groups + seeded users.
+5. Upload the frontend to S3 and inject the API URL and Cognito IDs.
+
+### Commands
+
+| Command | What it does |
+| --- | --- |
+| `python3 redeploy_all.py` | Deploy without demo data |
+| `python3 redeploy_all.py --seed` | Deploy **and** load demo data |
+| `python3 redeploy_all.py --clean --yes` | Delete everything first, then deploy fresh |
+| `python3 redeploy_all.py --teardown --yes` | Remove all SeatMe AWS resources |
+
+> `--clean` and `--teardown` are destructive (they delete the table and all data, the
+> Cognito user pool, and the S3 site). Without `--yes` you'll be asked to confirm.
+
+When it finishes, open the **Website URL** to use the app.
+
+> With `--seed`, the script also prints a **Demo host** link
+> (`.../host.html?host=demo@seatme.app`) that opens the seeded example dashboard
+> **without signing in** — handy for sharing a **read-only** demo (editing requires
+> signing in as the host or an admin).
 
 ---
 
-### Step 4 – Seed Example Data (Optional)
+## Option B — step by step (advanced)
 
-Run:
+Useful for understanding each stage or deploying pieces individually.
+
+**1. Create the database table**
 
 ```bash
-python3 seed_single_table.py
+aws dynamodb create-table --table-name SeatMe \
+  --attribute-definitions AttributeName=email,AttributeType=S \
+  --key-schema AttributeName=email,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region us-east-1
 ```
 
-This inserts sample hosts, guests, and tables.
-
----
-
-### Step 5 – Deploy Backend
-
-Navigate to:
+**2. Deploy the backend (Lambdas + API Gateway)**
 
 ```bash
-cd ~/SeatMe/backend/lambdas
-```
-
-Run:
-
-```bash
+cd backend/deploy
 python3 setup_aws.py
 ```
 
-This script automatically:
+Note the **`API_BASE_URL`** it prints.
 
-* Creates or updates Lambda functions
-* Creates or updates API Gateway routes
-* Configures permissions
-* Deploys backend resources
-
-At the end, the script prints an API URL.
-
----
-
-### Step 6 – Deploy Frontend
-
-Navigate to:
+**3. Set up authentication (Cognito)**
 
 ```bash
-cd ~/SeatMe/frontend
+python3 setup_cognito.py
 ```
 
-Run:
+Note the **`USER_POOL_ID`** and **`CLIENT_ID`** it prints.
+
+**4. Deploy the frontend**
 
 ```bash
-python3 deploy_frontend.py --api-url YOUR_API_URL
+cd ../../frontend
+python3 deploy_frontend.py \
+  --api-url       <API_BASE_URL> \
+  --user-pool-id  <USER_POOL_ID> \
+  --client-id     <CLIENT_ID>
 ```
 
-Replace `YOUR_API_URL` with the URL printed by `setup_aws.py`.
+It prints the **Website URL**.
 
-At the end, the script prints a Website URL.
+**5. (Optional) Load demo data** — only after the Lambdas exist:
 
-Open the Website URL to access the system.
-
----
-
-## Expected Result
-
-After deployment:
-
-### DynamoDB
-
-* SeatMe table exists
-* Hosts, guests, and tables are stored
-
-### Lambda
-
-* 12 SeatMe Lambda functions are deployed
-
-### API Gateway
-
-* REST endpoints are available
-
-### SNS
-
-* Invitation emails can be delivered
-
-### S3
-
-* Frontend is hosted and accessible
+```bash
+cd ../backend/deploy
+python3 seed_example.py
+```
 
 ---
 
-## Important Notes
+## Updating an existing deployment
 
-* Do NOT click Reset in AWS Academy Learner Lab.
-* Use region us-east-1.
-* Back up changes regularly to GitHub.
-* SNS confirmation emails may arrive in Spam.
-* The first invitation triggers SNS subscription confirmation.
+Re-running the deploy is safe and idempotent — existing resources are updated in place:
+
+```bash
+python3 redeploy_all.py          # updates Lambda code, re-uploads the frontend
+```
+
+To rebuild everything from a clean slate:
+
+```bash
+python3 redeploy_all.py --clean --yes --seed
+```
+
+## Teardown
+
+```bash
+python3 redeploy_all.py --teardown --yes
+```
+
+Removes the S3 site, API Gateway, Lambda functions, DynamoDB table, and Cognito user pool.
 
 ---
 
-## Future Improvements
+## Email delivery notes
 
-* Replace SNS with Amazon SES for direct email delivery
-* User authentication
-* Monitoring and logging
-* Improved invitation templates
-* Production deployment
-* Mobile-responsive UI
+- **Cognito codes** (sign-up / password reset) are sent by Cognito's built-in mailer by
+  default and may land in **spam**. `setup_cognito.py` can optionally route them through
+  Amazon SES if a verified sender is available; in restricted lab accounts where SES is
+  blocked, it automatically falls back to the built-in mailer.
+- **Invitations** go out via Amazon SNS. The first message a guest receives is a one-time
+  **"Confirm subscription"** email — they must confirm before any invitation is delivered.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `AccessDenied` on SES during deploy | Expected in lab accounts — deployment continues; Cognito uses its built-in mailer. |
+| Verification / invitation email missing | Check the **spam** folder; for invitations confirm the SNS subscription first. |
+| Frontend loads but API calls fail | Re-run `redeploy_all.py` so the API URL is re-injected into the site. |
+| "Sign-in is not configured" | The site was uploaded without Cognito IDs — redeploy so they're injected. |
+| Lab reset | Don't click **Reset** in the Learner Lab; it wipes resources. Redeploy if it happens. |
+
+> Keep everything in region **`us-east-1`**.

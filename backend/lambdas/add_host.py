@@ -1,8 +1,14 @@
+"""
+SeatMe - Create event (host)
+Feature: F06 (Create event) - POST /hosts
+"""
+
 import json
 import re
 from datetime import datetime
 import boto3
 from botocore.exceptions import ClientError
+from _common import require_owner
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('SeatMe')
@@ -26,7 +32,7 @@ def lambda_handler(event, context):
         }
 
     name = body['name'].strip()
-    email = body['email'].strip()
+    email = body['email'].strip().lower()
     event_name = body['event_name'].strip()
     event_date = body['event_date'].strip()
     event_location = body['event_location'].strip()
@@ -36,6 +42,10 @@ def lambda_handler(event, context):
             'statusCode': 400,
             'body': json.dumps({'message': 'Invalid email format'})
         }
+
+    denied = require_owner(event, email)
+    if denied:
+        return denied
 
     try:
         datetime.strptime(event_date, '%Y-%m-%d')
@@ -54,7 +64,8 @@ def lambda_handler(event, context):
                 'event_date': event_date,
                 'event_location': event_location,
                 'guests': {},
-                'tables': {}
+                'tables': {},
+                'categories': ['Family', 'Friends', 'Work', 'Other']
             },
             ConditionExpression='attribute_not_exists(email)'
         )

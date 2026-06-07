@@ -1,8 +1,14 @@
+"""
+SeatMe - Edit event details & categories
+Feature: F08 (Edit event details & guest categories) - PUT /hosts
+"""
+
 import json
 import re
 from datetime import datetime
 import boto3
 from botocore.exceptions import ClientError
+from _common import require_owner
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('SeatMe')
@@ -24,13 +30,17 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Missing required field: host_email'})
         }
 
-    host_email = host_email.strip()
+    host_email = host_email.strip().lower()
 
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', host_email):
         return {
             'statusCode': 400,
             'body': json.dumps({'message': 'Invalid email format'})
         }
+
+    denied = require_owner(event, host_email)
+    if denied:
+        return denied
 
     name = body.get('name')
     event_name = body.get('event_name')
@@ -69,6 +79,24 @@ def lambda_handler(event, context):
         update_parts.append('#el = :el')
         attr_names['#el'] = 'event_location'
         attr_values[':el'] = event_location.strip()
+
+    categories = body.get('categories')
+    if categories is not None:
+        if not isinstance(categories, list) or not all(isinstance(c, str) and c.strip() for c in categories):
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'categories must be a list of non-empty strings'})
+            }
+        cleaned = []
+        seen = set()
+        for c in categories:
+            c = c.strip()
+            if c.lower() not in seen:
+                seen.add(c.lower())
+                cleaned.append(c)
+        update_parts.append('#cat = :cat')
+        attr_names['#cat'] = 'categories'
+        attr_values[':cat'] = cleaned
 
     if not update_parts:
         return {

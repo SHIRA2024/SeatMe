@@ -89,31 +89,26 @@ def set_public_access(bucket_name):
 
     print('  Public access and static website hosting enabled')
 
-# ─── Inject API URL ────────────────────────────────────────────────────────
+# ─── Inject deploy-time config ─────────────────────────────────────────────
 
-def inject_api_url(content: bytes, api_url: str, filename: str) -> bytes:
+def inject_config(content: bytes, api_url: str,
+                  user_pool_id: str = None, client_id: str = None) -> bytes:
+    """Replaces the API URL and Cognito placeholders in HTML/JS files."""
     text = content.decode('utf-8', errors='replace')
     text = text.replace('https://REPLACE_WITH_YOUR_API_URL', api_url)
-
-    if filename.lower().endswith(('.html', '.htm')) and '_api.js' not in filename:
-        api_config = f'\n<script>window.SEATME_API_BASE = "{api_url}";</script>\n'
-        api_script = '<script src="_api.js"></script>\n'
-        if '</head>' in text:
-            text = text.replace('</head>', api_config + '</head>', 1)
-        if '</body>' in text and '<script src="_api.js">' not in text:
-            text = text.replace('</body>', api_script + '</body>', 1)
-
+    if user_pool_id:
+        text = text.replace('REPLACE_WITH_COGNITO_USER_POOL_ID', user_pool_id)
+    if client_id:
+        text = text.replace('REPLACE_WITH_COGNITO_CLIENT_ID', client_id)
     return text.encode('utf-8')
 
 # ─── Upload Files ──────────────────────────────────────────────────────────
 
-def upload_files(bucket_name: str, api_url: str):
+def upload_files(bucket_name: str, api_url: str,
+                 user_pool_id: str = None, client_id: str = None):
     s3 = boto3.client('s3', region_name=REGION)
     print(f'\n  Uploading files from: {FRONTEND_DIR}')
     uploaded = 0
-
-    # Upload all files, then copy login screen as index.html
-    login_file = 'SCD540~1.HTM'
 
     for fname in os.listdir(FRONTEND_DIR):
         fpath = os.path.join(FRONTEND_DIR, fname)
@@ -128,7 +123,7 @@ def upload_files(bucket_name: str, api_url: str):
 
         ext = os.path.splitext(fname)[1].lower()
         if ext in ('.html', '.htm', '.js'):
-            content = inject_api_url(content, api_url, fname)
+            content = inject_config(content, api_url, user_pool_id, client_id)
 
         mime, _ = mimetypes.guess_type(fname)
         mime = mime or 'application/octet-stream'
@@ -136,16 +131,6 @@ def upload_files(bucket_name: str, api_url: str):
         s3.put_object(Bucket=bucket_name, Key=fname, Body=content, ContentType=mime)
         print(f'  Uploaded: {fname}')
         uploaded += 1
-
-    # Set login screen as the homepage
-    if login_file in os.listdir(FRONTEND_DIR):
-        s3.copy_object(
-            Bucket=bucket_name,
-            CopySource={'Bucket': bucket_name, 'Key': login_file},
-            Key='index.html',
-            MetadataDirective='COPY'
-        )
-        print(f'  Set {login_file} as index.html')
 
     print(f'\n  Total files uploaded: {uploaded}')
 
@@ -158,6 +143,8 @@ def main():
         required=True,
         help='The API Base URL printed by setup_aws.py'
     )
+    parser.add_argument('--user-pool-id', help='Cognito User Pool ID (from setup_cognito.py)')
+    parser.add_argument('--client-id', help='Cognito App Client ID (from setup_cognito.py)')
     args = parser.parse_args()
     api_url = args.api_url.rstrip('/')
 
@@ -172,7 +159,7 @@ def main():
     set_public_access(bucket_name)
 
     print('\n── Uploading Files ──')
-    upload_files(bucket_name, api_url)
+    upload_files(bucket_name, api_url, args.user_pool_id, args.client_id)
 
     website_url = f'http://{bucket_name}.s3-website-{REGION}.amazonaws.com'
     print('\n' + '='*50)

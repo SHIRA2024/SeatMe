@@ -1,6 +1,12 @@
+"""
+SeatMe - Automatic seating
+Feature: F16 (Auto-assign confirmed guests to tables) - POST /seating
+"""
+
 import json
 import re
 import boto3
+from _common import require_owner
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('SeatMe')
@@ -22,13 +28,17 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Missing required field: host_email'})
         }
 
-    host_email = host_email.strip()
+    host_email = host_email.strip().lower()
 
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', host_email):
         return {
             'statusCode': 400,
             'body': json.dumps({'message': 'Invalid email format'})
         }
+
+    denied = require_owner(event, host_email)
+    if denied:
+        return denied
 
     response = table.get_item(Key={'email': host_email})
 
@@ -110,26 +120,44 @@ def lambda_handler(event, context):
                 break
             remaining = still_remaining
 
-    # Update each guest's table in DynamoDB
-    attr_names = {}
+    # Persist: assign tables for seated guests and clear any stale assignments
+    # (guests previously seated who are no longer confirmed or no longer fit).
+    attr_names = {'#t': 'table'}
     attr_values = {}
     set_parts = []
+    remove_parts = []
 
-    for i, (guest_email, tbl) in enumerate(assignments.items()):
-        gid_key = f'#g{i}'
-        tbl_key = f':t{i}'
+    idx = 0
+    for guest_email, tbl in assignments.items():
+        gid_key = f'#g{idx}'
+        tbl_key = f':t{idx}'
         attr_names[gid_key] = guest_email
-        attr_names['#t'] = 'table'
         attr_values[tbl_key] = tbl
         set_parts.append(f'guests.{gid_key}.#t = {tbl_key}')
+        idx += 1
 
+    for guest_email, g in guests.items():
+        if g.get('table') is not None and guest_email not in assignments:
+            gid_key = f'#g{idx}'
+            attr_names[gid_key] = guest_email
+            remove_parts.append(f'guests.{gid_key}.#t')
+            idx += 1
+
+    update_expr = ''
     if set_parts:
-        table.update_item(
+        update_expr = 'SET ' + ', '.join(set_parts)
+    if remove_parts:
+        update_expr += (' ' if update_expr else '') + 'REMOVE ' + ', '.join(remove_parts)
+
+    if update_expr:
+        kwargs = dict(
             Key={'email': host_email},
-            UpdateExpression='SET ' + ', '.join(set_parts),
+            UpdateExpression=update_expr,
             ExpressionAttributeNames=attr_names,
-            ExpressionAttributeValues=attr_values
         )
+        if attr_values:
+            kwargs['ExpressionAttributeValues'] = attr_values
+        table.update_item(**kwargs)
 
     return {
         'statusCode': 200,

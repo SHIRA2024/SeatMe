@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!--
+  SeatMe - Admin portal
+  Feature: F18 (Admin - list & oversee all events)
+  Visible only to members of the Cognito 'admin' group. Lists every event and
+  lets an administrator open (manage) or delete any of them.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">⚡</span> SeatMe</a>
+      <div class="appbar-actions">
+        <span class="badge badge-cat">Admin</span>
+        <span class="appbar-host" id="adminLabel"></span>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="margin-bottom:20px;">
+      <h1 style="font-size:24px;font-weight:800;">All events</h1>
+      <p class="muted" id="summary">Loading…</p>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Event</th><th>Host</th><th>Date</th><th>Location</th><th>Guests</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState" style="display:none;">No events yet.</div>
+    </div>
+  </main>
+
+  <script>
+    // Admin pages require a real signed-in session (no ?host= preview here).
+    if (!Session.isAuthed()) { location.href = 'login.html'; }
+
+    async function load() {
+      const res = await Admin.listHosts();
+      if (res.status === 401) { toast('Please sign in again', 'err'); setTimeout(() => (location.href = 'login.html'), 800); return; }
+      if (res.status === 403) {
+        toast('Admin access required', 'err');
+        setTimeout(() => (location.href = 'host.html'), 900);
+        return;
+      }
+      if (!res.ok) { toast(res.data.message || 'Could not load events', 'err'); return; }
+
+      document.getElementById('adminLabel').textContent = Session.getHostEmail();
+      const hosts = res.data.hosts || [];
+      document.getElementById('summary').textContent =
+        `${res.data.total} event${res.data.total === 1 ? '' : 's'} across all hosts`;
+      document.getElementById('emptyState').style.display = hosts.length ? 'none' : 'block';
+
+      document.getElementById('rows').innerHTML = hosts.map((h) => {
+        const enc = encodeURIComponent(h.email);
+        return `
+          <tr>
+            <td><strong>${escapeHtml(h.event_name || '—')}</strong></td>
+            <td class="muted">${escapeHtml(h.name || '')}<br/><span class="muted">${escapeHtml(h.email)}</span></td>
+            <td>${escapeHtml(h.event_date || '—')}</td>
+            <td>${escapeHtml(h.event_location || '—')}</td>
+            <td>${escapeHtml(h.guest_count)}</td>
+            <td><div class="row-actions">
+              <a class="btn btn-secondary btn-sm" href="host.html?host=${enc}">Open</a>
+              <button class="btn btn-ghost btn-sm" title="Delete event" onclick="deleteEvent('${enc}')">🗑️</button>
+            </div></td>
+          </tr>`;
+      }).join('');
+    }
+
+    async function deleteEvent(enc) {
+      const email = decodeURIComponent(enc);
+      if (!confirm(`Delete the event for ${email}? This removes all its guests.`)) return;
+      const res = await Hosts.remove(email);
+      if (res.ok) { toast('Event deleted'); load(); }
+      else toast(res.data.message || 'Could not delete event', 'err');
+    }
+
+    function logout() { Session.clear(); location.href = 'index.html'; }
+
+    if (Session.isAuthed()) load();
+  </script>
+</body>
+</html>

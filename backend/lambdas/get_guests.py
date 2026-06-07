@@ -1,3 +1,8 @@
+"""
+SeatMe - List guests
+Feature: F12 (List all guests of an event) - GET /guests
+"""
+
 import json
 import re
 import boto3
@@ -16,7 +21,7 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Missing required query parameter: host_email'})
         }
 
-    host_email = host_email.strip()
+    host_email = host_email.strip().lower()
 
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', host_email):
         return {

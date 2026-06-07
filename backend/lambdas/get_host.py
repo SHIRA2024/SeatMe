@@ -1,3 +1,8 @@
+"""
+SeatMe - View event dashboard
+Feature: F07 (Load an event's details) - GET /hosts
+"""
+
 import json
 import re
 import boto3
@@ -16,7 +21,7 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Missing required query parameter: host_email'})
         }
 
-    host_email = host_email.strip()
+    host_email = host_email.strip().lower()
 
     if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', host_email):
         return {
@@ -43,6 +48,7 @@ def lambda_handler(event, context):
             'event_date': item.get('event_date'),
             'event_location': item.get('event_location'),
             'tables': item.get('tables', {}),
+            'categories': item.get('categories', []),
             'guest_count': len(item.get('guests', {}))
         }, default=str)
     }

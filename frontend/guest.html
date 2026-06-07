@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!-- SeatMe | Features: F13 (Update guest / assign seat), F14 (Delete guest),
+     F15 (RSVP link), F19 (No-login preview link) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guest details – SeatMe</title>
+  <link rel="stylesheet" href="app.css" />
+  <script>window.SEATME_API_BASE = "https://REPLACE_WITH_YOUR_API_URL";</script>
+  <script src="api.js"></script>
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">⚡</span> SeatMe</a>
+      <div class="appbar-actions">
+        <a class="btn btn-ghost btn-sm" id="backLink" href="host.html">← Back to event</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container container-sm" style="margin-top:24px;">
+    <div id="readonlyBanner" class="readonly-banner" style="display:none;">
+      🔒 Read-only preview — <a href="login.html">log in as this host</a> to make changes.
+    </div>
+    <div id="content"><div class="empty">Loading guest…</div></div>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const GUEST = (params.get('guest') || '').trim().toLowerCase();
+    // Host comes from the logged-in session, or from an invitation link (?host=)
+    const HOST = Session.getHostEmail() || (params.get('host') || '').trim().toLowerCase();
+    // Preview mode: no session, host supplied via the URL. Keep the host param
+    // on the "back to event" link so navigation stays in the no-login preview.
+    const IS_PREVIEW = !Session.getHostEmail() && !!HOST;
+    const BACK_HREF = IS_PREVIEW ? `host.html?host=${encodeURIComponent(HOST)}` : 'host.html';
+    document.getElementById('backLink').href = BACK_HREF;
+    // An anonymous preview can view but not change the guest; writes are
+    // rejected server-side, so disable the controls to match.
+    const IS_READONLY = IS_PREVIEW && !Session.isAuthed();
+    if (IS_READONLY) {
+      const banner = document.getElementById('readonlyBanner');
+      if (banner) banner.style.display = '';
+    }
+    function applyReadonly() {
+      if (!IS_READONLY) return;
+      document.querySelectorAll('#content button, #content input, #content select, #content textarea')
+        .forEach((el) => { el.disabled = true; });
+    }
+    let current = null;
+    let categories = [];
+
+    function rsvpBadge(r) {
+      if (r === 'yes') return '<span class="badge badge-yes">Coming</span>';
+      if (r === 'no')  return '<span class="badge badge-no">Declined</span>';
+      return '<span class="badge badge-maybe">Pending</span>';
+    }
+
+    function showMessage(html) {
+      document.getElementById('content').innerHTML = `<div class="card"><div class="empty">${html}</div></div>`;
+    }
+
+    async function load() {
+      if (!HOST || !GUEST) {
+        showMessage('Missing host or guest reference. <br /><a href="login.html">Go to login</a>');
+        return;
+      }
+      const [res, hostRes] = await Promise.all([Guests.list(HOST), Hosts.get(HOST)]);
+      if (!res.ok) {
+        showMessage(escapeHtml(res.data.message || 'Could not load guest'));
+        return;
+      }
+      categories = (hostRes.ok && Array.isArray(hostRes.data.categories)) ? hostRes.data.categories : [];
+      current = (res.data.guests || {})[GUEST];
+      if (!current) {
+        showMessage(`Guest not found. <br /><a href="${BACK_HREF}">Back to event</a>`);
+        return;
+      }
+      render();
+    }
+
+    function categorySelect(currentCat) {
+      const cats = categories.slice();
+      if (currentCat && !cats.includes(currentCat)) cats.unshift(currentCat);
+      const opts = ['<option value="">— None —</option>']
+        .concat(cats.map((c) => `<option value="${escapeHtml(c)}"${c === currentCat ? ' selected' : ''}>${escapeHtml(c)}</option>`));
+      return `<select class="input" id="e_category">${opts.join('')}</select>`;
+    }
+
+    function render() {
+      const g = current;
+      const tableValue = g.table != null ? '#' + escapeHtml(g.table) : '—';
+      document.getElementById('content').innerHTML = `
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">${escapeHtml(g.name || GUEST)}</div>
+              <div class="card-sub">${escapeHtml(GUEST)}</div>
+            </div>
+            ${rsvpBadge(g.rsvp)}
+          </div>
+          <div class="stat-row">
+            <div class="stat"><div class="stat-num">${escapeHtml(g.count || 1)}</div><div class="stat-label">Party size</div></div>
+            <div class="stat"><div class="stat-num">${tableValue}</div><div class="stat-label">Table</div></div>
+            <div class="stat"><div class="stat-num" style="font-size:15px;padding-top:7px;">${g.category ? escapeHtml(g.category) : '—'}</div><div class="stat-label">Category</div></div>
+          </div>
+          ${g.song ? `<p class="muted" style="margin-top:10px;">🎵 Song request: ${escapeHtml(g.song)}</p>` : ''}
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px;">Edit details</div>
+          <form onsubmit="return saveGuest(event)">
+            <div class="field"><label>Name</label><input class="input" id="e_name" value="${escapeHtml(g.name || '')}" /></div>
+            <div class="grid-2">
+              <div class="field"><label>Category</label>${categorySelect(g.category || '')}</div>
+              <div class="field"><label>Party size</label><input class="input" type="number" min="1" id="e_count" value="${escapeHtml(g.count || 1)}" /><div class="hint">People this invite covers</div></div>
+              <div class="field">
+                <label>RSVP</label>
+                <select class="input" id="e_rsvp">
+                  <option value="?"${g.rsvp === '?' ? ' selected' : ''}>Pending</option>
+                  <option value="yes"${g.rsvp === 'yes' ? ' selected' : ''}>Coming</option>
+                  <option value="no"${g.rsvp === 'no' ? ' selected' : ''}>Declined</option>
+                </select>
+              </div>
+              <div class="field"><label>Table</label><input class="input" type="number" min="1" id="e_table" value="${g.table != null ? escapeHtml(g.table) : ''}" placeholder="Unassigned" /></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Save</button>
+              <button class="btn btn-secondary" type="button" onclick="invite()">✉️ Send invitation</button>
+              <button class="btn btn-danger" type="button" onclick="removeGuest()">Delete guest</button>
+            </div>
+          </form>
+        </div>`;
+      applyReadonly();
+    }
+
+    async function saveGuest(e) {
+      e.preventDefault();
+      const tableRaw = document.getElementById('e_table').value.trim();
+      const payload = {
+        host_email: HOST,
+        guest_email: GUEST,
+        name: document.getElementById('e_name').value.trim(),
+        category: document.getElementById('e_category').value.trim(),
+        count: parseInt(document.getElementById('e_count').value) || 1,
+        rsvp: document.getElementById('e_rsvp').value,
+        table: tableRaw === '' ? null : parseInt(tableRaw),
+      };
+      const res = await Guests.update(payload);
+      if (res.ok) {
+        toast('Saved ✓');
+        current = Object.assign({}, current, {
+          name: payload.name, category: payload.category,
+          count: payload.count, rsvp: payload.rsvp, table: payload.table,
+        });
+        render();
+      } else {
+        toast(res.data.message || 'Save failed', 'err');
+      }
+      return false;
+    }
+
+    async function invite() {
+      const res = await Invitations.send(HOST, GUEST);
+      if (res.status === 202) toast('Confirmation email sent — guest must confirm first');
+      else if (res.ok) toast('Invitation sent ✓');
+      else toast(res.data.message || 'Could not send invitation', 'err');
+    }
+
+    async function removeGuest() {
+      if (!confirm('Delete this guest?')) return;
+      const res = await Guests.remove(HOST, GUEST);
+      if (res.ok) { toast('Guest deleted'); setTimeout(() => (location.href = BACK_HREF), 600); }
+      else toast(res.data.message || 'Delete failed', 'err');
+    }
+
+    load();
+  </script>
+</body>
+</html>

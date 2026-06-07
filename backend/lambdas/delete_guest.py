@@ -1,7 +1,13 @@
+"""
+SeatMe - Delete guest
+Feature: F14 (Remove a guest from an event) - DELETE /guests
+"""
+
 import json
 import re
 import boto3
 from botocore.exceptions import ClientError
+from _common import require_owner
 
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 table = dynamodb.Table('SeatMe')
@@ -24,8 +30,8 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': f'Missing required fields: {", ".join(missing)}'})
         }
 
-    host_email = body['host_email'].strip()
-    guest_email = body['guest_email'].strip()
+    host_email = body['host_email'].strip().lower()
+    guest_email = body['guest_email'].strip().lower()
 
     for addr in [host_email, guest_email]:
         if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', addr):
@@ -33,6 +39,10 @@ def lambda_handler(event, context):
                 'statusCode': 400,
                 'body': json.dumps({'message': 'Invalid email format'})
             }
+
+    denied = require_owner(event, host_email)
+    if denied:
+        return denied
 
     try:
         table.update_item(
